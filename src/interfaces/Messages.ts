@@ -114,6 +114,10 @@ export interface DataClass {
 
 export enum Type {
   Chat = "chat",
+  Image = "image",
+  Video = "video",
+  Audio = "ptt",
+  Sticker = "sticker",
 }
 
 export interface FromClass {

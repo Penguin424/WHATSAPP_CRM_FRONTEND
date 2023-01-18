@@ -1,4 +1,4 @@
-import { EditFilled, SmileOutlined } from "@ant-design/icons";
+import { EditFilled, SmileOutlined, UploadOutlined } from "@ant-design/icons";
 import { Modal, Form, Input, Button } from "antd";
 import EmojiPicker from "emoji-picker-react";
 import React, { useContext, useEffect, useState } from "react";
@@ -7,8 +7,10 @@ import Swal from "sweetalert2";
 import { colorsCosbiome } from "../constants/colorSchemas";
 import useHttp from "../hooks/useHttp";
 import { Datum as Chat } from "../interfaces/Chats";
-import { IMessagesDB, IMessageSocket } from "../interfaces/Messages";
+import { IMessagesDB, IMessageSocket, Type } from "../interfaces/Messages";
 import { GlobalContext } from "../providers/GlobalProvider";
+import AudioComponent from "./AudioComponent";
+import VideoComponent from "./VideoComponent";
 
 interface IPropsChatComponent {
   chat: Chat;
@@ -19,6 +21,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
   const [redaction, setRedaction] = useState<string>("");
   const [open, setOpen] = useState<boolean>(false);
   const [isEmoji, setIsEmoji] = useState<boolean>(false);
+  const [openFiles, setOpenFiles] = useState<boolean>(false);
 
   const chatRef = React.useRef<HTMLDivElement>(null);
 
@@ -51,6 +54,8 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
     return () => {
       socket.off("mensaje:create");
     };
+
+    // eslint-disable-next-line
   }, [socket, chat]);
 
   useEffect(() => {
@@ -60,13 +65,13 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
         behavior: "auto",
       });
     }
+    // eslint-disable-next-line
   }, [messages]);
 
   const handleGetMessages = async () => {
     const messages = await get(
       `mensajes?filters[chat][id][$eq]=${chat.id}&populate[chat][id]&sort=createdAt:DESC`
     );
-    console.log(messages);
 
     setMessages(messages);
   };
@@ -139,6 +144,13 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
 
   return (
     <>
+      <Modal
+        title="Archivos"
+        open={openFiles}
+        onCancel={() => setOpenFiles(false)}
+        footer={null}
+        width={1000}
+      ></Modal>
       {isEmoji && (
         <div
           style={{
@@ -220,30 +232,19 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
               {chat.attributes.cliente.data.attributes.nombre}
             </p>
           </div>
-          <div
-            style={{
-              cursor: "pointer",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              width: "70PX",
-              height: "70PX",
-              borderRadius: "50%",
-              backgroundColor: colorsCosbiome.primary,
-            }}
+
+          <EditFilled
             onClick={() => {
               setOpen(true);
               form.setFieldsValue({
                 nombre: chat.attributes.cliente.data.attributes.nombre,
               });
             }}
-          >
-            <EditFilled
-              style={{
-                fontSize: "1.5rem",
-              }}
-            />
-          </div>
+            style={{
+              fontSize: "1.5rem",
+              cursor: "pointer",
+            }}
+          />
         </div>
 
         <div
@@ -279,9 +280,41 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                     padding: "10px",
                     borderRadius: "10px",
                     margin: "10px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems:
+                      message.attributes.dataWS.type === Type.Image ||
+                      message.attributes.dataWS.type === Type.Video ||
+                      message.attributes.dataWS.type === Type.Sticker
+                        ? "center"
+                        : "flex-start",
+                    justifyContent:
+                      message.attributes.dataWS.type === Type.Image ||
+                      message.attributes.dataWS.type === Type.Video ||
+                      message.attributes.dataWS.type === Type.Sticker
+                        ? "center"
+                        : "flex-start",
                   }}
                 >
-                  <p>{message.attributes.body}</p>
+                  {message.attributes.dataWS.type === Type.Image ? (
+                    <img
+                      src={`data:image/jpeg;base64,${message.attributes.body}`}
+                      alt={message.attributes.body}
+                      style={{ width: "80%", borderRadius: "10px" }}
+                    />
+                  ) : message.attributes.dataWS.type === Type.Video ? (
+                    <VideoComponent videoBase64={message.attributes.body} />
+                  ) : message.attributes.dataWS.type === Type.Audio ? (
+                    <AudioComponent audioBase64={message.attributes.body} />
+                  ) : message.attributes.dataWS.type === Type.Sticker ? (
+                    <img
+                      src={`data:image/webp;base64,${message.attributes.body}`}
+                      alt={message.attributes.body}
+                      style={{ width: "80%", borderRadius: "10px" }}
+                    />
+                  ) : (
+                    <p>{message.attributes.body}</p>
+                  )}
                   <small>
                     {" "}
                     {new Date(
@@ -322,7 +355,14 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
               type="text"
             />
           </div>
-          <div className="col-md-2">
+          <div
+            className="col-md-2"
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <Button
               block
               style={{
@@ -333,8 +373,22 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
               onClick={() => {
                 setIsEmoji(!isEmoji);
               }}
+              className="mr-2"
             >
               <SmileOutlined />
+            </Button>
+            <Button
+              block
+              style={{
+                backgroundColor: colorsCosbiome.primary,
+                borderColor: colorsCosbiome.primary,
+                color: "white",
+              }}
+              onClick={() => {
+                setOpenFiles(!openFiles);
+              }}
+            >
+              <UploadOutlined />
             </Button>
           </div>
 

@@ -1,14 +1,17 @@
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
-import HomePage from "./pages/HomePage";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import DrawerComponent from "./components/DrawerComponent";
+import ChatUserPage from "./pages/HomePage";
 import GlobalProvider from "./providers/GlobalProvider";
 
 const App = () => {
   return (
     <BrowserRouter>
       <GlobalProvider>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-        </Routes>
+        <DrawerComponent>
+          <Routes>
+            <Route path="/" element={<ChatUserPage />} />
+          </Routes>
+        </DrawerComponent>
       </GlobalProvider>
     </BrowserRouter>
   );
