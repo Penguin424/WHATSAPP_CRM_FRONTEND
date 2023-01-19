@@ -1,4 +1,9 @@
-import { EditFilled, SmileOutlined, UploadOutlined } from "@ant-design/icons";
+import {
+  EditFilled,
+  Loading3QuartersOutlined,
+  SmileOutlined,
+  UploadOutlined,
+} from "@ant-design/icons";
 import { Modal, Form, Input, Button } from "antd";
 import EmojiPicker from "emoji-picker-react";
 import React, { useContext, useEffect, useState } from "react";
@@ -10,6 +15,7 @@ import { Datum as Chat } from "../interfaces/Chats";
 import { IMessagesDB, IMessageSocket, Type } from "../interfaces/Messages";
 import { GlobalContext } from "../providers/GlobalProvider";
 import AudioComponent from "./AudioComponent";
+import MediaTableComponent from "./MediaTableComponent";
 import VideoComponent from "./VideoComponent";
 
 interface IPropsChatComponent {
@@ -33,7 +39,12 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
     handleGetMessages();
 
     socket.on("mensaje:create", (data: IMessageSocket) => {
-      if (data.de === chat.attributes.cliente.data.attributes.telefono) {
+      console.log("data", data);
+
+      if (
+        data.de === chat.attributes.cliente.data.attributes.telefono ||
+        data.a === chat.attributes.cliente.data.attributes.telefono
+      ) {
         setMessages((prev) => {
           if (!prev) return prev;
 
@@ -86,22 +97,9 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
         de: "5213319747514@c.us",
         vendedor: 1,
         chat: chat.id,
+        isMedia: false,
       });
 
-      setMessages((prev) => {
-        if (!prev) return prev;
-
-        return {
-          ...prev,
-          data: [
-            {
-              id: message.id,
-              attributes: message as any,
-            },
-            ...prev.data,
-          ],
-        };
-      });
       setRedaction("");
     } catch (error) {
       Swal.fire({
@@ -149,8 +147,10 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
         open={openFiles}
         onCancel={() => setOpenFiles(false)}
         footer={null}
-        width={1000}
-      ></Modal>
+        width="80%"
+      >
+        <MediaTableComponent chat={chat} />
+      </Modal>
       {isEmoji && (
         <div
           style={{
@@ -211,7 +211,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
             display: "flex",
             justifyContent: "space-around",
             alignItems: "center",
-            height: "10%",
+            height: "7%",
             width: "100%",
             borderBottomLeftRadius: "10px",
             borderBottomRightRadius: "10px",
@@ -226,6 +226,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
               style={{
                 fontSize: "1.5rem",
                 fontWeight: "bold",
+                color: "white",
               }}
               className="text-center"
             >
@@ -243,6 +244,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
             style={{
               fontSize: "1.5rem",
               cursor: "pointer",
+              color: "white",
             }}
           />
         </div>
@@ -250,81 +252,90 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
         <div
           ref={chatRef}
           style={{
-            height: "80%",
+            height: "83%",
             width: "100%",
             //   backgroundColor: "green",
             overflowY: "scroll",
-            maxHeight: "80%",
+            maxHeight: "83%",
             scrollBehavior: "smooth",
           }}
         >
-          {messages?.data
-            .map((message) => (
-              <div
-                key={message.id}
-                style={{
-                  width: "100%",
-                  display: "flex",
-                  justifyContent: message.attributes.dataWS.fromMe
-                    ? "flex-end"
-                    : "flex-start",
-                }}
-              >
-                <div
-                  style={{
-                    width: "50%",
-                    backgroundColor: message.attributes.dataWS.fromMe
-                      ? colorsCosbiome.tertiary
-                      : colorsCosbiome.primary,
-                    color: "white",
-                    padding: "10px",
-                    borderRadius: "10px",
-                    margin: "10px",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems:
-                      message.attributes.dataWS.type === Type.Image ||
-                      message.attributes.dataWS.type === Type.Video ||
-                      message.attributes.dataWS.type === Type.Sticker
-                        ? "center"
+          {messages?.data.length === 0 ? (
+            <Loading3QuartersOutlined />
+          ) : (
+            messages?.data
+              .map((message) => {
+                const isStikerOrImageOrVideo =
+                  message.attributes.dataWS.type === Type.Image ||
+                  message.attributes.dataWS.type === Type.Sticker;
+
+                return (
+                  <div
+                    key={message.id}
+                    style={{
+                      width: "100%",
+                      display: "flex",
+                      justifyContent: message.attributes.dataWS.fromMe
+                        ? "flex-end"
                         : "flex-start",
-                    justifyContent:
-                      message.attributes.dataWS.type === Type.Image ||
-                      message.attributes.dataWS.type === Type.Video ||
-                      message.attributes.dataWS.type === Type.Sticker
-                        ? "center"
-                        : "flex-start",
-                  }}
-                >
-                  {message.attributes.dataWS.type === Type.Image ? (
-                    <img
-                      src={`data:image/jpeg;base64,${message.attributes.body}`}
-                      alt={message.attributes.body}
-                      style={{ width: "80%", borderRadius: "10px" }}
-                    />
-                  ) : message.attributes.dataWS.type === Type.Video ? (
-                    <VideoComponent videoBase64={message.attributes.body} />
-                  ) : message.attributes.dataWS.type === Type.Audio ? (
-                    <AudioComponent audioBase64={message.attributes.body} />
-                  ) : message.attributes.dataWS.type === Type.Sticker ? (
-                    <img
-                      src={`data:image/webp;base64,${message.attributes.body}`}
-                      alt={message.attributes.body}
-                      style={{ width: "80%", borderRadius: "10px" }}
-                    />
-                  ) : (
-                    <p>{message.attributes.body}</p>
-                  )}
-                  <small>
-                    {" "}
-                    {new Date(
-                      message.attributes.createdAt
-                    ).toLocaleString()}{" "}
-                  </small>
-                </div>
-              </div>
-            ))
-            .reverse()}
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "50%",
+                        backgroundColor:
+                          isStikerOrImageOrVideo ||
+                          message.attributes.dataWS.type === Type.Audio ||
+                          message.attributes.dataWS.type === Type.Video
+                            ? colorsCosbiome.secondary
+                            : message.attributes.dataWS.fromMe
+                            ? colorsCosbiome.tertiary
+                            : colorsCosbiome.primary,
+                        color: "white",
+                        padding: "10px",
+                        borderRadius: "10px",
+                        margin: "10px",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: isStikerOrImageOrVideo
+                          ? "center"
+                          : "flex-start",
+                        justifyContent: isStikerOrImageOrVideo
+                          ? "center"
+                          : "flex-start",
+                      }}
+                    >
+                      {message.attributes.dataWS.type === Type.Image ? (
+                        <img
+                          src={`data:image/jpeg;base64,${message.attributes.body}`}
+                          alt={message.attributes.body}
+                          style={{ width: "50%", borderRadius: "10px" }}
+                        />
+                      ) : message.attributes.dataWS.type === Type.Video ? (
+                        <VideoComponent videoBase64={message.attributes.body} />
+                      ) : message.attributes.dataWS.type === Type.Audio ? (
+                        <AudioComponent audioBase64={message.attributes.body} />
+                      ) : message.attributes.dataWS.type === Type.Sticker ? (
+                        <img
+                          src={`data:image/webp;base64,${message.attributes.body}`}
+                          alt={message.attributes.body}
+                          style={{ width: "50%", borderRadius: "10px" }}
+                        />
+                      ) : (
+                        <p>{message.attributes.body}</p>
+                      )}
+                      <small>
+                        {" "}
+                        {new Date(
+                          message.attributes.createdAt
+                        ).toLocaleString()}{" "}
+                      </small>
+                    </div>
+                  </div>
+                );
+              })
+              .reverse()
+          )}
         </div>
         {/* <div
         

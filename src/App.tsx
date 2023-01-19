@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import DrawerComponent from "./components/DrawerComponent";
-import ChatUserPage from "./pages/HomePage";
+import ContactosPage from "./pages/ContactosPage";
+import ChatUserPage from "./pages/ChatUserPage";
 import GlobalProvider from "./providers/GlobalProvider";
 
 const App = () => {
@@ -10,6 +11,7 @@ const App = () => {
         <DrawerComponent>
           <Routes>
             <Route path="/" element={<ChatUserPage />} />
+            <Route path="/contactos" element={<ContactosPage />} />
           </Routes>
         </DrawerComponent>
       </GlobalProvider>
