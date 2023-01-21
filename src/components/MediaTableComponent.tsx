@@ -1,6 +1,6 @@
 import { Card } from "antd";
 import React from "react";
-import { Datum as Chat } from "../interfaces/Chats";
+import { IChatsDB as Chat } from "../interfaces/Chats";
 import { categorias } from "../pages/LoadMediaPage";
 import MediaCardsComponent from "./MediaCardsComponent";
 

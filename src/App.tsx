@@ -3,6 +3,7 @@ import DrawerComponent from "./components/DrawerComponent";
 import ContactosPage from "./pages/ContactosPage";
 import ChatUserPage from "./pages/ChatUserPage";
 import GlobalProvider from "./providers/GlobalProvider";
+import LoginPage from "./pages/LoginPage";
 
 const App = () => {
   return (
@@ -10,7 +11,8 @@ const App = () => {
       <GlobalProvider>
         <DrawerComponent>
           <Routes>
-            <Route path="/" element={<ChatUserPage />} />
+            <Route path="/" element={<LoginPage />} />
+            <Route path="/crm" element={<ChatUserPage />} />
             <Route path="/contactos" element={<ContactosPage />} />
           </Routes>
         </DrawerComponent>

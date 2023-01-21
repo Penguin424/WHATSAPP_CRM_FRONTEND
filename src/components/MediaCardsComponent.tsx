@@ -1,7 +1,7 @@
 import { Button, Card, Input } from "antd";
 import React, { useEffect, useState } from "react";
 import { IMaquinaWeb } from "../interfaces/Maquinas";
-import { Datum as Chat } from "../interfaces/Chats";
+import { IChatsDB as Chat } from "../interfaces/Chats";
 import { categorias } from "../pages/LoadMediaPage";
 import Swal from "sweetalert2";
 import { colorsCosbiome } from "../constants/colorSchemas";
@@ -75,7 +75,7 @@ const MediaCardsComponent = ({
       for await (const url of urls) {
         await post("mensajes", {
           mensaje: url,
-          a: chat.attributes.cliente.data.attributes.telefono,
+          a: chat.cliente.telefono,
           de: "5213319747514@c.us",
           vendedor: 1,
           chat: chat.id,

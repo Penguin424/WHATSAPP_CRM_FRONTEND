@@ -1,41 +1,30 @@
 export interface IChatsDB {
-  data: Datum[];
-  meta: Meta;
-}
-
-export interface Datum {
   id: number;
-  attributes: DatumAttributes;
-}
-
-export interface DatumAttributes {
   ultimo: string;
   createdAt: Date;
   updatedAt: Date;
+  vendedor: Vendedor;
   cliente: Cliente;
 }
 
 export interface Cliente {
-  data: Data;
-}
-
-export interface Data {
   id: number;
-  attributes: DataAttributes;
-}
-
-export interface DataAttributes {
   nombre: string;
   telefono: string;
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface Meta {
-  pagination: Pagination;
-}
-
-export interface Pagination {
-  page: number;
-  pageSize: number;
+export interface Vendedor {
+  id: number;
+  username: string;
+  email: string;
+  provider: string;
+  password: string;
+  resetPasswordToken: null;
+  confirmationToken: null;
+  confirmed: boolean;
+  blocked: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

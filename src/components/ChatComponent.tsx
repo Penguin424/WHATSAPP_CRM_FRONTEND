@@ -11,19 +11,20 @@ import Swal from "sweetalert2";
 
 import { colorsCosbiome } from "../constants/colorSchemas";
 import useHttp from "../hooks/useHttp";
-import { Datum as Chat } from "../interfaces/Chats";
-import { IMessagesDB, IMessageSocket, Type } from "../interfaces/Messages";
+import { IChatsDB } from "../interfaces/Chats";
+import { IMessagesDB } from "../interfaces/Messages";
 import { GlobalContext } from "../providers/GlobalProvider";
+import { strapiFlatten } from "../utils/flatten";
 import AudioComponent from "./AudioComponent";
 import MediaTableComponent from "./MediaTableComponent";
 import VideoComponent from "./VideoComponent";
 
 interface IPropsChatComponent {
-  chat: Chat;
+  chat: IChatsDB;
 }
 
 const ChatComponent = ({ chat }: IPropsChatComponent) => {
-  const [messages, setMessages] = useState<IMessagesDB | undefined>();
+  const [messages, setMessages] = useState<IMessagesDB[]>([]);
   const [redaction, setRedaction] = useState<string>("");
   const [open, setOpen] = useState<boolean>(false);
   const [isEmoji, setIsEmoji] = useState<boolean>(false);
@@ -38,26 +39,19 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
   useEffect(() => {
     handleGetMessages();
 
-    socket.on("mensaje:create", (data: IMessageSocket) => {
+    socket.on("mensaje:create", (data: IMessagesDB) => {
       console.log("data", data);
 
+      const flatten: IMessagesDB = strapiFlatten(data);
+
       if (
-        data.de === chat.attributes.cliente.data.attributes.telefono ||
-        data.a === chat.attributes.cliente.data.attributes.telefono
+        flatten.de === chat.cliente.telefono ||
+        flatten.a === chat.cliente.telefono
       ) {
         setMessages((prev) => {
           if (!prev) return prev;
 
-          return {
-            ...prev,
-            data: [
-              {
-                id: data.id,
-                attributes: data as any,
-              },
-              ...prev.data,
-            ],
-          };
+          return [flatten, ...prev];
         });
       }
     });
@@ -84,7 +78,9 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
       `mensajes?filters[chat][id][$eq]=${chat.id}&populate[chat][id]&sort=createdAt:DESC`
     );
 
-    setMessages(messages);
+    console.log("messages", messages);
+
+    setMessages(messages.data);
   };
 
   const handleSubmitMessage = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -93,7 +89,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
 
       const message: any = await post("mensajes", {
         mensaje: redaction,
-        a: chat.attributes.cliente.data.attributes.telefono,
+        a: chat.cliente.telefono,
         de: "5213319747514@c.us",
         vendedor: 1,
         chat: chat.id,
@@ -113,13 +109,13 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
 
   const handleUpdateClient = async (values: { nombre: string }) => {
     try {
-      await update(`clientes/${chat.attributes.cliente.data.id}`, {
+      await update(`clientes/${chat.cliente.id}`, {
         data: {
           nombre: values.nombre,
         },
       });
 
-      chat.attributes.cliente.data.attributes.nombre = values.nombre;
+      chat.cliente.nombre = values.nombre;
 
       await Swal.fire({
         icon: "success",
@@ -168,7 +164,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
       )}
       <Modal
         open={open}
-        title={`MODIFICAR CONTADO DE ${chat.attributes.cliente.data.attributes.nombre.toUpperCase()}`}
+        title={`MODIFICAR CONTADO DE ${chat.cliente.nombre.toUpperCase()}`}
         onCancel={() => setOpen(false)}
         footer={null}
         width={1000}
@@ -178,7 +174,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
           form={form}
           layout="vertical"
           initialValues={{
-            nombre: chat.attributes.cliente.data.attributes.nombre,
+            nombre: chat.cliente.nombre,
           }}
         >
           <Form.Item
@@ -230,7 +226,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
               }}
               className="text-center"
             >
-              {chat.attributes.cliente.data.attributes.nombre}
+              {chat.cliente.nombre}
             </p>
           </div>
 
@@ -238,7 +234,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
             onClick={() => {
               setOpen(true);
               form.setFieldsValue({
-                nombre: chat.attributes.cliente.data.attributes.nombre,
+                nombre: chat.cliente.nombre,
               });
             }}
             style={{
@@ -260,14 +256,14 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
             scrollBehavior: "smooth",
           }}
         >
-          {messages?.data.length === 0 ? (
+          {messages.length === 0 ? (
             <Loading3QuartersOutlined />
           ) : (
-            messages?.data
+            messages
               .map((message) => {
                 const isStikerOrImageOrVideo =
-                  message.attributes.dataWS.type === Type.Image ||
-                  message.attributes.dataWS.type === Type.Sticker;
+                  message.dataWS.type === "image" ||
+                  message.dataWS.type === "sticker";
 
                 return (
                   <div
@@ -275,7 +271,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                     style={{
                       width: "100%",
                       display: "flex",
-                      justifyContent: message.attributes.dataWS.fromMe
+                      justifyContent: message.dataWS.fromMe
                         ? "flex-end"
                         : "flex-start",
                     }}
@@ -285,10 +281,10 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                         width: "50%",
                         backgroundColor:
                           isStikerOrImageOrVideo ||
-                          message.attributes.dataWS.type === Type.Audio ||
-                          message.attributes.dataWS.type === Type.Video
+                          message.dataWS.type === "ptt" ||
+                          message.dataWS.type === "video"
                             ? colorsCosbiome.secondary
-                            : message.attributes.dataWS.fromMe
+                            : message.dataWS.fromMe
                             ? colorsCosbiome.tertiary
                             : colorsCosbiome.primary,
                         color: "white",
@@ -305,30 +301,34 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                           : "flex-start",
                       }}
                     >
-                      {message.attributes.dataWS.type === Type.Image ? (
+                      {message.dataWS.type === "image" ? (
                         <img
-                          src={`data:image/jpeg;base64,${message.attributes.body}`}
-                          alt={message.attributes.body}
+                          src={`data:image/jpeg;base64,${message.body}`}
+                          alt={message.body}
                           style={{ width: "50%", borderRadius: "10px" }}
                         />
-                      ) : message.attributes.dataWS.type === Type.Video ? (
-                        <VideoComponent videoBase64={message.attributes.body} />
-                      ) : message.attributes.dataWS.type === Type.Audio ? (
-                        <AudioComponent audioBase64={message.attributes.body} />
-                      ) : message.attributes.dataWS.type === Type.Sticker ? (
+                      ) : message.dataWS.type === "video" ? (
+                        <VideoComponent videoBase64={message.body} />
+                      ) : message.dataWS.type === "ptt" ? (
+                        <AudioComponent audioBase64={message.body} />
+                      ) : message.dataWS.type === "sticker" ? (
                         <img
-                          src={`data:image/webp;base64,${message.attributes.body}`}
-                          alt={message.attributes.body}
+                          src={`data:image/webp;base64,${message.body}`}
+                          alt={message.body}
                           style={{ width: "50%", borderRadius: "10px" }}
                         />
                       ) : (
-                        <p>{message.attributes.body}</p>
+                        <p
+                          style={{
+                            wordBreak: "break-word",
+                          }}
+                        >
+                          {message.body}
+                        </p>
                       )}
                       <small>
                         {" "}
-                        {new Date(
-                          message.attributes.createdAt
-                        ).toLocaleString()}{" "}
+                        {new Date(message.createdAt).toLocaleString()}{" "}
                       </small>
                     </div>
                   </div>

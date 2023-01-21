@@ -2,10 +2,10 @@ import { useState } from "react";
 import ChatComponent from "../components/ChatComponent";
 import ChatLIstComponent from "../components/ChatLIstComponent";
 import { colorsCosbiome } from "../constants/colorSchemas";
-import { Datum } from "../interfaces/Chats";
+import { IChatsDB } from "../interfaces/Chats";
 
 const ChatUserPage = () => {
-  const [chatSelect, setChatSelect] = useState<Datum | undefined>();
+  const [chatSelect, setChatSelect] = useState<IChatsDB | undefined>();
 
   return (
     <div

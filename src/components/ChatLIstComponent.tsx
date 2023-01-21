@@ -1,39 +1,45 @@
 import React, { useContext, useEffect, useState } from "react";
 import { colorsCosbiome } from "../constants/colorSchemas";
 import useHttp from "../hooks/useHttp";
-import { IChatsDB, Datum } from "../interfaces/Chats";
+import { IChatsDB } from "../interfaces/Chats";
 import { GlobalContext } from "../providers/GlobalProvider";
+import { strapiFlatten } from "../utils/flatten";
 
 interface IPropsChatList {
-  chatSelect: Datum | undefined;
-  setChatSelect: React.Dispatch<React.SetStateAction<Datum | undefined>>;
+  chatSelect: IChatsDB | undefined;
+  setChatSelect: React.Dispatch<React.SetStateAction<IChatsDB | undefined>>;
 }
 
 const ChatLIstComponent = ({ chatSelect, setChatSelect }: IPropsChatList) => {
-  const [chats, setChats] = useState<IChatsDB>();
+  const [chats, setChats] = useState<IChatsDB[]>([]);
   const { socket } = useContext(GlobalContext);
   const { get } = useHttp();
 
   useEffect(() => {
-    socket.on("chat:update", (data) => {
-      setChats((prev) => {
-        if (!prev) return prev;
-
-        let chat = prev.data.find((chat) => chat.id === data.id);
-
-        if (chat) {
-          chat.attributes.ultimo = data.ultimo;
-          chat.attributes.updatedAt = data.updatedAt;
-        }
-
-        return {
-          ...prev,
-          data: [...prev.data],
-        };
-      });
-    });
-
     handleGetChats();
+
+    socket.on("chat:update", (data: IChatsDB) => {
+      const flatten = strapiFlatten(data);
+
+      if (flatten.vendedor.id === 1) {
+        setChats((prevState) => {
+          return [
+            ...prevState.filter((chat) => chat.id !== flatten.id),
+            flatten,
+          ];
+        });
+      } else {
+        setChats((prevState) => {
+          let isChatInList = prevState.find((chat) => chat.id === flatten.id);
+
+          if (isChatInList) {
+            return [...prevState.filter((chat) => chat.id !== flatten.id)];
+          } else {
+            return prevState;
+          }
+        });
+      }
+    });
 
     return () => {
       socket.off("chat:update");
@@ -43,18 +49,19 @@ const ChatLIstComponent = ({ chatSelect, setChatSelect }: IPropsChatList) => {
   }, []);
 
   const handleGetChats = async () => {
-    const chatDB: IChatsDB = await get(
-      "chats?populate[cliente][populate]&sort=updatedAt:DESC"
+    const chatDB: { data: IChatsDB[] } = await get(
+      `chats?populate[cliente][populate]&sort=updatedAt:DESC&filters[vendedor][id][$eq]=${1}`
     );
-    setChats(chatDB);
+
+    console.log(chatDB);
+
+    setChats(chatDB.data);
   };
   return (
     <ul className="list-group">
-      {chats?.data
-        .sort((a, b) =>
-          a.attributes.updatedAt > b.attributes.updatedAt ? -1 : 1
-        )
-        .filter((chat) => chat.attributes.cliente !== null)
+      {chats
+        .sort((a, b) => (a.updatedAt > b.updatedAt ? -1 : 1))
+        .filter((chat) => chat.cliente !== null)
         .map((chat) => (
           <li
             className="list-group-item mb-2"
@@ -79,12 +86,12 @@ const ChatLIstComponent = ({ chatSelect, setChatSelect }: IPropsChatList) => {
                     color: "white",
                   }}
                 >
-                  {chat.attributes.cliente.data.attributes.nombre}
+                  {chat.cliente.nombre}
                 </h5>
-                <p>{chat.attributes.cliente.data.attributes.telefono}</p>
+                <p>{chat.cliente.telefono}</p>
                 <small>
-                  {chat.attributes.ultimo} <br />{" "}
-                  {new Date(chat.attributes.updatedAt).toLocaleString()}
+                  {chat.ultimo} <br />{" "}
+                  {new Date(chat.updatedAt).toLocaleString()}
                 </small>
               </div>
             </div>
