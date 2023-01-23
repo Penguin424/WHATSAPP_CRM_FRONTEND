@@ -5,14 +5,27 @@ export interface IChatsDB {
   updatedAt: Date;
   vendedor: Vendedor;
   cliente: Cliente;
+  campana: Campana;
+  etapa: Cliente;
+}
+
+export interface Campana {
+  id: number;
+  nombre: string;
+  claves: string;
+  createdAt: Date;
+  updatedAt: Date;
+  publishedAt: Date;
+  etapas: Cliente[];
 }
 
 export interface Cliente {
   id: number;
   nombre: string;
-  telefono: string;
   createdAt: Date;
   updatedAt: Date;
+  publishedAt?: Date;
+  telefono?: string;
 }
 
 export interface Vendedor {
@@ -20,9 +33,6 @@ export interface Vendedor {
   username: string;
   email: string;
   provider: string;
-  password: string;
-  resetPasswordToken: null;
-  confirmationToken: null;
   confirmed: boolean;
   blocked: boolean;
   createdAt: Date;

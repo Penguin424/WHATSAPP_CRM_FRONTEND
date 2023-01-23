@@ -4,13 +4,14 @@ import {
   SmileOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
-import { Modal, Form, Input, Button } from "antd";
+import { Modal, Form, Input, Button, Select } from "antd";
 import EmojiPicker from "emoji-picker-react";
 import React, { useContext, useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
 import { colorsCosbiome } from "../constants/colorSchemas";
 import useHttp from "../hooks/useHttp";
+import { ICampanasDB } from "../interfaces/Camapanas";
 import { IChatsDB } from "../interfaces/Chats";
 import { IMessagesDB } from "../interfaces/Messages";
 import { GlobalContext } from "../providers/GlobalProvider";
@@ -29,6 +30,8 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
   const [open, setOpen] = useState<boolean>(false);
   const [isEmoji, setIsEmoji] = useState<boolean>(false);
   const [openFiles, setOpenFiles] = useState<boolean>(false);
+  const [campanas, setCampanas] = useState<ICampanasDB[]>([]);
+  const [, setUpdate] = useState({});
 
   const chatRef = React.useRef<HTMLDivElement>(null);
 
@@ -38,6 +41,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
 
   useEffect(() => {
     handleGetMessages();
+    handleGetCampanas();
 
     socket.on("mensaje:create", (data: IMessagesDB) => {
       console.log("data", data);
@@ -73,6 +77,14 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
     // eslint-disable-next-line
   }, [messages]);
 
+  const handleGetCampanas = async () => {
+    const campanasDB: { data: ICampanasDB[] } = await get(
+      "campanas?populate[0]=etapas&populate[1]=chats&populate[2]=chats.etapa"
+    );
+
+    setCampanas(campanasDB.data);
+  };
+
   const handleGetMessages = async () => {
     const messages = await get(
       `mensajes?filters[chat][id][$eq]=${chat.id}&populate[chat][id]&sort=createdAt:DESC`
@@ -87,7 +99,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
     try {
       e.preventDefault();
 
-      const message: any = await post("mensajes", {
+      await post("mensajes", {
         mensaje: redaction,
         a: chat.cliente.telefono,
         de: "5213319747514@c.us",
@@ -207,7 +219,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
             display: "flex",
             justifyContent: "space-around",
             alignItems: "center",
-            height: "7%",
+            height: "10%",
             width: "100%",
             borderBottomLeftRadius: "10px",
             borderBottomRightRadius: "10px",
@@ -216,8 +228,139 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
             boxShadow: `0px 0px 10px 0px ${colorsCosbiome.primary}`,
           }}
         >
-          <div></div>
-          <div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-around",
+              alignItems: "center",
+              width: "33%",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "80%",
+              }}
+              className="mr-1 ml-1"
+            >
+              <label
+                style={{
+                  color: "white",
+                }}
+                htmlFor="campana"
+              >
+                Campaña
+              </label>
+              <Select
+                value={chat.campana && chat.campana.id}
+                onChange={async (value) => {
+                  try {
+                    await update(
+                      `chats/${chat.id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
+                      {
+                        data: {
+                          campana: value,
+                          etapa: campanas.find(
+                            (campana) => campana.id === value
+                          )!.etapas[0].id,
+                        },
+                      }
+                    );
+
+                    Swal.fire({
+                      icon: "success",
+                      title: "Campaña actualizada",
+                      showConfirmButton: false,
+                      timer: 1500,
+                    });
+
+                    setUpdate({});
+                  } catch (error) {
+                    Swal.fire({
+                      icon: "error",
+                      title: "Error al actualizar",
+                      showConfirmButton: false,
+                      timer: 1500,
+                    });
+                  }
+                }}
+              >
+                {campanas.map((campana) => {
+                  return (
+                    <Select.Option value={campana.id} key={campana.id}>
+                      {campana.nombre}
+                    </Select.Option>
+                  );
+                })}
+              </Select>
+            </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                width: "80%",
+              }}
+            >
+              <label
+                style={{
+                  color: "white",
+                }}
+                htmlFor="etapa"
+              >
+                Etapa
+              </label>
+              {chat.campana && (
+                <Select
+                  value={chat.etapa.id}
+                  onChange={async (value) => {
+                    try {
+                      await update(
+                        `chats/${chat.id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
+                        {
+                          data: {
+                            etapa: value,
+                          },
+                        }
+                      );
+                      await Swal.fire({
+                        icon: "success",
+                        title: "Etapa actualizada",
+                        showConfirmButton: false,
+                        timer: 1500,
+                      });
+
+                      setUpdate({});
+                    } catch (error) {
+                      Swal.fire({
+                        icon: "error",
+
+                        title: "Error al actualizar",
+                        showConfirmButton: false,
+                        timer: 1500,
+                      });
+                    }
+                  }}
+                >
+                  {chat.campana.etapas.map((etapa) => {
+                    return (
+                      <Select.Option value={etapa.id} key={etapa.id}>
+                        {etapa.nombre}
+                      </Select.Option>
+                    );
+                  })}
+                </Select>
+              )}
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-around",
+              alignItems: "center",
+              width: "33%",
+            }}
+          >
             <p
               style={{
                 fontSize: "1.5rem",
@@ -230,25 +373,34 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
             </p>
           </div>
 
-          <EditFilled
-            onClick={() => {
-              setOpen(true);
-              form.setFieldsValue({
-                nombre: chat.cliente.nombre,
-              });
-            }}
+          <div
             style={{
-              fontSize: "1.5rem",
-              cursor: "pointer",
-              color: "white",
+              display: "flex",
+              justifyContent: "space-around",
+              alignItems: "center",
+              width: "33%",
             }}
-          />
+          >
+            <EditFilled
+              onClick={() => {
+                setOpen(true);
+                form.setFieldsValue({
+                  nombre: chat.cliente.nombre,
+                });
+              }}
+              style={{
+                fontSize: "1.5rem",
+                cursor: "pointer",
+                color: "white",
+              }}
+            />
+          </div>
         </div>
 
         <div
           ref={chatRef}
           style={{
-            height: "83%",
+            height: "80%",
             width: "100%",
             //   backgroundColor: "green",
             overflowY: "scroll",

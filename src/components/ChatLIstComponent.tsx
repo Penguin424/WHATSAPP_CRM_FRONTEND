@@ -50,7 +50,7 @@ const ChatLIstComponent = ({ chatSelect, setChatSelect }: IPropsChatList) => {
 
   const handleGetChats = async () => {
     const chatDB: { data: IChatsDB[] } = await get(
-      `chats?populate[cliente][populate]&sort=updatedAt:DESC&filters[vendedor][id][$eq]=${1}`
+      `chats?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas&sort=updatedAt:DESC&filters[vendedor][id][$eq]=${1}`
     );
 
     console.log(chatDB);

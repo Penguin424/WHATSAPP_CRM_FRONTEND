@@ -4,7 +4,6 @@ import useHttp from "../hooks/useHttp";
 import moment from "moment";
 import { RangeValue } from "rc-picker/lib/interface";
 import type { ColumnsType } from "antd/lib/table";
-import { IContactosDB } from "../interfaces/Contactos";
 import { colorsCosbiome } from "../constants/colorSchemas";
 import ChatComponent from "../components/ChatComponent";
 import { IChatsDB } from "../interfaces/Chats";
@@ -27,7 +26,7 @@ const ContactosPage = () => {
   const { socket } = useContext(GlobalContext);
 
   useEffect(() => {
-    handleGetContactos([moment().subtract(1, "day"), moment()]);
+    handleGetContactos([moment().subtract(1, "month"), moment()]);
     handleGetUsers();
 
     socket.on("chat:create", (data: IChatsDB) => {
@@ -64,13 +63,15 @@ const ContactosPage = () => {
       socket.off("chat:create");
       socket.off("chat:update");
     };
+
+    // eslint-disable-next-line
   }, []);
 
   const handleGetContactos = async (values: RangeValue<moment.Moment>) => {
     if (!values) return;
 
     const chatsDB = await get(
-      `chats?filters[$and][0][createdAt][$gte]=${values[0]?.toISOString()}&filters[$and][1][createdAt][$lte]=${values[1]?.toISOString()}&sort=createdAt:DESC&populate[0]=vendedor&populate[1]=cliente`
+      `chats?filters[$and][0][createdAt][$gte]=${values[0]?.toISOString()}&filters[$and][1][createdAt][$lte]=${values[1]?.toISOString()}&sort=createdAt:DESC&populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`
     );
 
     console.log(chatsDB);
@@ -97,7 +98,7 @@ const ContactosPage = () => {
       };
 
       const chatUpdate = await update(
-        `chats/${selectChat.id}?populate[0]=vendedor&populate[1]=cliente`,
+        `chats/${selectChat.id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
         {
           data: data,
         }
@@ -145,9 +146,12 @@ const ContactosPage = () => {
       };
 
       for (const id of selectedRowKeys) {
-        await update(`chats/${id}?populate[0]=vendedor&populate[1]=cliente`, {
-          data: data,
-        });
+        await update(
+          `chats/${id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
+          {
+            data: data,
+          }
+        );
       }
 
       Swal.fire({
@@ -210,6 +214,16 @@ const ContactosPage = () => {
       dataIndex: ["updatedAt"],
       key: "updatedAt",
       render: (value) => new Date(value).toLocaleString(),
+    },
+    {
+      title: "Campaña",
+      dataIndex: ["campana", "nombre"],
+      key: "campana",
+    },
+    {
+      title: "Etapa",
+      dataIndex: ["etapa", "nombre"],
+      key: "etapa",
     },
     {
       title: "Vendedor",

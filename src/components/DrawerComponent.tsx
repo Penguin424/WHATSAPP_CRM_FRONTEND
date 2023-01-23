@@ -50,6 +50,15 @@ const DrawerComponent = ({ children }: IPropsDrawer) => {
           >
             CRM
           </Menu.Item>
+
+          <Menu.Item
+            key="3"
+            onClick={() => {
+              navigate("/campañas");
+            }}
+          >
+            CAMPAÑAS
+          </Menu.Item>
         </Menu>
       </Drawer>
       {children}
