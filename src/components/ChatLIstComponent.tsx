@@ -18,8 +18,16 @@ const ChatLIstComponent = ({ chatSelect, setChatSelect }: IPropsChatList) => {
   useEffect(() => {
     handleGetChats();
 
-    socket.on("chat:update", (data: IChatsDB) => {
-      const flatten = strapiFlatten(data);
+    socket.on("chat:update", (data: any) => {
+      let flatten: IChatsDB;
+
+      if (data.data) {
+        flatten = strapiFlatten(data.data);
+      } else {
+        flatten = strapiFlatten(data);
+      }
+
+      if (flatten.vendedor === null) return;
 
       if (flatten.vendedor.id === 1) {
         setChats((prevState) => {
@@ -28,6 +36,10 @@ const ChatLIstComponent = ({ chatSelect, setChatSelect }: IPropsChatList) => {
             flatten,
           ];
         });
+
+        if (chatSelect?.id === flatten.id) {
+          setChatSelect(flatten);
+        }
       } else {
         setChats((prevState) => {
           let isChatInList = prevState.find((chat) => chat.id === flatten.id);
@@ -46,14 +58,12 @@ const ChatLIstComponent = ({ chatSelect, setChatSelect }: IPropsChatList) => {
     };
 
     // eslint-disable-next-line
-  }, []);
+  }, [chatSelect]);
 
   const handleGetChats = async () => {
     const chatDB: { data: IChatsDB[] } = await get(
-      `chats?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas&sort=updatedAt:DESC&filters[vendedor][id][$eq]=${1}`
+      `chats?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas&sort=updatedAt:DESC&filters[vendedor][id][$eq]=${1}&pagination[limit]=100000`
     );
-
-    console.log(chatDB);
 
     setChats(chatDB.data);
   };

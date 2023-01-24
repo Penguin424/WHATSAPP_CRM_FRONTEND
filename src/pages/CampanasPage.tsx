@@ -30,8 +30,6 @@ const CampanasPage = () => {
     handleGetCampanas();
 
     socket.on("campana:create", (data) => {
-      console.log("campana:create", data);
-
       let campanaCreate: ICampanasDB;
 
       if (data.data) {
@@ -60,6 +58,7 @@ const CampanasPage = () => {
 
     return () => {
       socket.off("campana:create");
+      socket.off("campana:update");
     };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -67,7 +66,7 @@ const CampanasPage = () => {
 
   const handleGetCampanas = async () => {
     const campanasDB: { data: ICampanasDB[] } = await get(
-      "campanas?populate[0]=etapas&populate[1]=chats&populate[2]=chats.etapa"
+      "campanas?populate[0]=etapas&populate[1]=chats&populate[2]=chats.etapa&pagination[limit]=100000"
     );
 
     setCampanas(campanasDB.data);
@@ -245,6 +244,12 @@ const CampanasPage = () => {
 
         <div className="row">
           {campanas.map((campana) => {
+            const procentajeVenta =
+              (campana.chats.filter((a) => a.etapa.nombre === "VENTA CONCLUIDA")
+                .length /
+                campana.chats.length) *
+              100;
+
             return (
               <div className="col-12 col-md-6 col-lg-4 mt-3" key={campana.id}>
                 <Card
@@ -282,6 +287,11 @@ const CampanasPage = () => {
                             );
                           })}
                         </div>
+                        <p>
+                          {procentajeVenta === Infinity
+                            ? "0%"
+                            : procentajeVenta.toFixed(2) + "%"}
+                        </p>
                       </>
                     }
                   />

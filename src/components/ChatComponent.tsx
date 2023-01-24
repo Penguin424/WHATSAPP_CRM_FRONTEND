@@ -44,8 +44,6 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
     handleGetCampanas();
 
     socket.on("mensaje:create", (data: IMessagesDB) => {
-      console.log("data", data);
-
       const flatten: IMessagesDB = strapiFlatten(data);
 
       if (
@@ -79,7 +77,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
 
   const handleGetCampanas = async () => {
     const campanasDB: { data: ICampanasDB[] } = await get(
-      "campanas?populate[0]=etapas&populate[1]=chats&populate[2]=chats.etapa"
+      "campanas?populate[0]=etapas&populate[1]=chats&populate[2]=chats.etapa&pagination[limit]=100000"
     );
 
     setCampanas(campanasDB.data);
@@ -87,10 +85,8 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
 
   const handleGetMessages = async () => {
     const messages = await get(
-      `mensajes?filters[chat][id][$eq]=${chat.id}&populate[chat][id]&sort=createdAt:DESC`
+      `mensajes?filters[chat][id][$eq]=${chat.id}&populate[chat][id]&sort=createdAt:DESC&pagination[limit]=100`
     );
-
-    console.log("messages", messages);
 
     setMessages(messages.data);
   };
@@ -127,7 +123,14 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
         },
       });
 
-      chat.cliente.nombre = values.nombre;
+      await update(
+        `chats/${chat.id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
+        {
+          data: {
+            updateAt: new Date().toISOString(),
+          },
+        }
+      );
 
       await Swal.fire({
         icon: "success",
@@ -219,8 +222,9 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
             display: "flex",
             justifyContent: "space-around",
             alignItems: "center",
-            height: "10%",
+            // height: "10%",
             width: "100%",
+            padding: "10px",
             borderBottomLeftRadius: "10px",
             borderBottomRightRadius: "10px",
             border: `1px solid ${colorsCosbiome.primary}`,
@@ -256,6 +260,10 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                 value={chat.campana && chat.campana.id}
                 onChange={async (value) => {
                   try {
+                    const idUpdateCampana = chat.campana
+                      ? chat.campana.id
+                      : value;
+
                     await update(
                       `chats/${chat.id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
                       {
@@ -264,6 +272,15 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                           etapa: campanas.find(
                             (campana) => campana.id === value
                           )!.etapas[0].id,
+                        },
+                      }
+                    );
+
+                    await update(
+                      `campanas/${idUpdateCampana}?populate[0]=etapas&populate[1]=chats&populate[2]=chats.etapa`,
+                      {
+                        data: {
+                          updateAt: new Date().toISOString(),
                         },
                       }
                     );
@@ -277,6 +294,8 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
 
                     setUpdate({});
                   } catch (error) {
+                    console.log(error);
+
                     Swal.fire({
                       icon: "error",
                       title: "Error al actualizar",
@@ -323,6 +342,16 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                           },
                         }
                       );
+
+                      await update(
+                        `campanas/${chat.campana.id}?populate[0]=etapas&populate[1]=chats&populate[2]=chats.etapa`,
+                        {
+                          data: {
+                            updateAt: new Date().toISOString(),
+                          },
+                        }
+                      );
+
                       await Swal.fire({
                         icon: "success",
                         title: "Etapa actualizada",

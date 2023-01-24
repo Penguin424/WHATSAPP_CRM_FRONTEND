@@ -11,6 +11,7 @@ import { IUsuarioDB } from "../interfaces/Usuarios";
 import Swal from "sweetalert2";
 import { GlobalContext } from "../providers/GlobalProvider";
 import { strapiFlatten } from "../utils/flatten";
+import _ from "lodash";
 
 const ContactosPage = () => {
   const [chats, setChats] = useState<IChatsDB[]>([]);
@@ -57,6 +58,16 @@ const ContactosPage = () => {
 
         return [...chats];
       });
+
+      setSelectChat((selectChat) => {
+        if (!selectChat) return selectChat;
+
+        if (selectChat.id === faltten.id) {
+          return faltten;
+        }
+
+        return selectChat;
+      });
     });
 
     return () => {
@@ -71,16 +82,14 @@ const ContactosPage = () => {
     if (!values) return;
 
     const chatsDB = await get(
-      `chats?filters[$and][0][createdAt][$gte]=${values[0]?.toISOString()}&filters[$and][1][createdAt][$lte]=${values[1]?.toISOString()}&sort=createdAt:DESC&populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`
+      `chats?filters[$and][0][createdAt][$gte]=${values[0]?.toISOString()}&filters[$and][1][createdAt][$lte]=${values[1]?.toISOString()}&sort=createdAt:DESC&populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas&pagination[limit]=100000`
     );
-
-    console.log(chatsDB);
 
     setChats(chatsDB.data);
   };
 
   const handleGetUsers = async () => {
-    const usersDB = await get("users");
+    const usersDB = await get("users?pagination[limit]=100000");
 
     console.log(usersDB);
 
@@ -219,11 +228,33 @@ const ContactosPage = () => {
       title: "Campaña",
       dataIndex: ["campana", "nombre"],
       key: "campana",
+      filters: _.uniqBy(
+        chats.map((chat) => chat.campana).filter((campana) => campana !== null),
+        "nombre"
+      ).map((campana) => ({
+        text: campana.nombre,
+        value: campana.nombre,
+      })),
+      onFilter: (value, record) => {
+        if (record.campana === null) return false;
+        return record.campana.nombre.indexOf(value as string) === 0;
+      },
     },
     {
       title: "Etapa",
       dataIndex: ["etapa", "nombre"],
       key: "etapa",
+      filters: _.uniqBy(
+        chats.map((chat) => chat.etapa).filter((etapa) => etapa !== null),
+        "nombre"
+      ).map((etapa) => ({
+        text: etapa.nombre,
+        value: etapa.nombre,
+      })),
+      onFilter: (value, record) => {
+        if (record.etapa === null) return false;
+        return record.etapa.nombre.indexOf(value as string) === 0;
+      },
     },
     {
       title: "Vendedor",
@@ -233,8 +264,11 @@ const ContactosPage = () => {
         text: user.username,
         value: user.username,
       })),
-      onFilter: (value, record) =>
-        record.vendedor.username.indexOf(value as string) === 0,
+      onFilter: (value, record) => {
+        if (record.vendedor === null) return false;
+
+        return record.vendedor.username.indexOf(value as string) === 0;
+      },
 
       render: (value) => (value === null ? "Sin asignar" : value),
     },
