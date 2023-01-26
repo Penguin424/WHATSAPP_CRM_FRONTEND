@@ -36,7 +36,7 @@ const ContactosPage = () => {
 
         if (index !== -1) return chats;
 
-        return [...chats, data];
+        return [data, ...chats];
       });
     });
 

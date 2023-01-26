@@ -273,7 +273,8 @@ const CampanasPage = () => {
                         <p>Chats: {campana.chats.length}</p>
                         <p>Palabras Clave: {campana.claves}</p>
                         <div>
-                          <small>ETAPAS</small>
+                          <small>ETAPAS </small>
+
                           {campana.etapas.map((etapa) => {
                             return (
                               <p key={etapa.id}>
