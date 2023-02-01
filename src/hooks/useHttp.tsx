@@ -7,10 +7,7 @@ const useHttp = () => {
     try {
       let req = await axios.get(`${endpointserver}${url}`, {
         headers: {
-          //   Authorization:
-          //     sessionStorage.getItem("token") !== null
-          //       ? `Bearer ${sessionStorage.getItem("token")}`
-          //       : "",
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         },
       });
 
@@ -39,7 +36,7 @@ const useHttp = () => {
       let req = await axios.post(`${endpointserver}${url}`, body, {
         headers: {
           "Content-type": "application/json",
-          // Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         },
       });
 
@@ -54,7 +51,7 @@ const useHttp = () => {
       let req = await axios.put(`${endpointserver}${url}`, body, {
         headers: {
           "Content-type": "application/json",
-          // Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         },
       });
 

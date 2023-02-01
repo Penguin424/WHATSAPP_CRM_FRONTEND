@@ -1,5 +1,6 @@
 import "./index.css";
 import "antd/dist/antd.min.css";
+import "react-calendar/dist/Calendar.css";
 
 import ReactDOM from "react-dom/client";
 import App from "./App";

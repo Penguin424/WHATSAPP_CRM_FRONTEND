@@ -1,4 +1,6 @@
+import moment from "moment";
 import { useState } from "react";
+import { Calendar } from "react-calendar";
 import ChatComponent from "../components/ChatComponent";
 import ChatLIstComponent from "../components/ChatLIstComponent";
 import { colorsCosbiome } from "../constants/colorSchemas";
@@ -6,6 +8,7 @@ import { IChatsDB } from "../interfaces/Chats";
 
 const ChatUserPage = () => {
   const [chatSelect, setChatSelect] = useState<IChatsDB | undefined>();
+  const [date, setDate] = useState<Date>(new Date());
 
   return (
     <div
@@ -20,8 +23,6 @@ const ChatUserPage = () => {
       }}
       className="container-fluid"
     >
-      {/* <h1 className="text-center">CHATS</h1> */}
-
       <div className="row">
         <div
           style={{
@@ -30,20 +31,67 @@ const ChatUserPage = () => {
             height: "100vh",
             padding: "5px",
             backgroundColor: colorsCosbiome.secondary,
-            overflowY: "scroll",
-            maxHeight: "90vh",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
           }}
           className="col-md-3"
         >
-          <ChatLIstComponent
-            chatSelect={chatSelect}
-            setChatSelect={setChatSelect}
-          />
+          <div
+            style={{
+              // border: "1px solid red",
+              height: "30%",
+              color: "black",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+            }}
+          >
+            <div className="mt-2">
+              <Calendar
+                onChange={(date: Date) => {
+                  setDate(date);
+
+                  console.log(date);
+                }}
+                value={date}
+              />
+            </div>
+          </div>
+
+          <div
+            className="mt-5"
+            style={{
+              // border: "1px solid red",
+
+              height: "55%",
+              overflowY: "scroll",
+              maxHeight: "55%",
+              width: "100%",
+              padding: "20px",
+            }}
+          >
+            <ChatLIstComponent
+              chatSelect={chatSelect}
+              setChatSelect={setChatSelect}
+              filters={`filters[vendedor][id][$eq]=${1}&filters[$and][1][fechamarcar][$gte]=${moment(
+                date
+              )
+                .startOf("D")
+                .toISOString()}&filters[$and][2][fechamarcar][$lte]=${moment(
+                date
+              )
+                .endOf("D")
+                .toISOString()}&pagination[limit]=100000&&filters[$and][3][cliente][nombre][$notNull]=true`}
+            />
+          </div>
         </div>
         <div
           style={{
             // border: "1px solid red",
-            height: "90vh",
+            height: "100vh",
           }}
           className="col-md-9"
         >

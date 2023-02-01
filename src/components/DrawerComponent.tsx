@@ -22,6 +22,7 @@ const DrawerComponent = ({ children }: IPropsDrawer) => {
           top: "10px",
           left: "96%",
           color: colorsCosbiome.tertiary,
+          zIndex: 100,
         }}
         onClick={() => setOpen(true)}
       />
@@ -58,6 +59,14 @@ const DrawerComponent = ({ children }: IPropsDrawer) => {
             }}
           >
             CAMPAÑAS
+          </Menu.Item>
+          <Menu.Item
+            key="4"
+            onClick={() => {
+              navigate("/contactodia");
+            }}
+          >
+            CONTACTO DEL DÍA
           </Menu.Item>
         </Menu>
       </Drawer>

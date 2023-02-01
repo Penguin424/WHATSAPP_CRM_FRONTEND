@@ -5,6 +5,7 @@ import ChatUserPage from "./pages/ChatUserPage";
 import GlobalProvider from "./providers/GlobalProvider";
 import LoginPage from "./pages/LoginPage";
 import CampanasPage from "./pages/CampanasPage";
+import ContactoDiaClienetes from "./pages/ContactoDiaClienetes";
 
 const App = () => {
   return (
@@ -16,6 +17,7 @@ const App = () => {
             <Route path="/crm" element={<ChatUserPage />} />
             <Route path="/contactos" element={<ContactosPage />} />
             <Route path="/campañas" element={<CampanasPage />} />
+            <Route path="/contactodia" element={<ContactoDiaClienetes />} />
           </Routes>
         </DrawerComponent>
       </GlobalProvider>

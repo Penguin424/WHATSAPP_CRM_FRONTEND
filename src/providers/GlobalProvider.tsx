@@ -14,7 +14,7 @@ export const GlobalContext = createContext({
 } as IGlobalContext);
 
 const GlobalProvider = ({ children }: any) => {
-  const { socketIo, online } = useSocket("192.168.1.147:1337");
+  const { socketIo, online } = useSocket("http://192.168.1.147:1337/");
 
   return (
     <GlobalContext.Provider

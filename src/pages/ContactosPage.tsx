@@ -1,4 +1,15 @@
-import { Button, DatePicker, Divider, Modal, Select, Table, Tag } from "antd";
+import {
+  Avatar,
+  Button,
+  DatePicker,
+  Divider,
+  Form,
+  Input,
+  Modal,
+  Select,
+  Table,
+  Tag,
+} from "antd";
 import React, { useContext, useEffect, useState } from "react";
 import useHttp from "../hooks/useHttp";
 import moment from "moment";
@@ -11,7 +22,15 @@ import { IUsuarioDB } from "../interfaces/Usuarios";
 import Swal from "sweetalert2";
 import { GlobalContext } from "../providers/GlobalProvider";
 import { strapiFlatten } from "../utils/flatten";
-import _ from "lodash";
+import _, { filter } from "lodash";
+import { ICampanasDB } from "../interfaces/Camapanas";
+import nofoto from "../assets/images/nofoto.jpeg";
+
+interface IFormDataAddUser {
+  nombre: string;
+  telefono: string;
+  campana: number;
+}
 
 const ContactosPage = () => {
   const [chats, setChats] = useState<IChatsDB[]>([]);
@@ -22,15 +41,27 @@ const ContactosPage = () => {
   const [userId, setUserId] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
+  const [openAddUser, setOpenAddUser] = useState<boolean>(false);
+  const [campanas, setCampanas] = useState<ICampanasDB[]>([]);
 
-  const { get, update } = useHttp();
+  const { get, update, post } = useHttp();
   const { socket } = useContext(GlobalContext);
+  const [form] = Form.useForm();
 
   useEffect(() => {
     handleGetContactos([moment().subtract(1, "month"), moment()]);
     handleGetUsers();
+    handleGetCampanas();
 
-    socket.on("chat:create", (data: IChatsDB) => {
+    socket.on("chat:create", (dat: any) => {
+      let data: IChatsDB;
+
+      if (dat.data) {
+        data = strapiFlatten(dat.data);
+      } else {
+        data = strapiFlatten(dat);
+      }
+
       setChats((chats) => {
         const index = chats.findIndex((chat) => chat.id === data.id);
 
@@ -82,10 +113,22 @@ const ContactosPage = () => {
     if (!values) return;
 
     const chatsDB = await get(
-      `chats?filters[$and][0][createdAt][$gte]=${values[0]?.toISOString()}&filters[$and][1][createdAt][$lte]=${values[1]?.toISOString()}&sort=createdAt:DESC&populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas&pagination[limit]=100000`
+      `chats?filters[$and][0][createdAt][$gte]=${values[0]
+        ?.startOf("D")
+        .toISOString()}&filters[$and][1][createdAt][$lte]=${values[1]
+        ?.endOf("D")
+        .toISOString()}&sort=createdAt:DESC&populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas&pagination[limit]=100000&filters[$and][2][cliente][nombre][$notNull]=true`
     );
 
     setChats(chatsDB.data);
+  };
+
+  const handleGetCampanas = async () => {
+    const campanasDB: { data: ICampanasDB[] } = await get(
+      "campanas?pagination[limit]=100000&populate[0]=etapas"
+    );
+
+    setCampanas(campanasDB.data);
   };
 
   const handleGetUsers = async () => {
@@ -189,12 +232,86 @@ const ContactosPage = () => {
     }
   };
 
+  const handleFinish = async (data: IFormDataAddUser) => {
+    try {
+      setIsLoading(true);
+
+      const cliente = await get(
+        `clientes?filters[telefono][$contains]=${data.telefono}`
+      );
+
+      if (cliente.data.length > 0) {
+        setIsLoading(false);
+        form.resetFields();
+
+        return Swal.fire({
+          icon: "error",
+          title: "Oops...",
+          text: "El cliente ya existe!",
+        });
+      }
+
+      const clienteDB: { data: { id: number } } = await post("clientes", {
+        data: {
+          nombre: data.nombre,
+          telefono: `${data.telefono}@c.us`,
+        },
+      });
+
+      await post(
+        "chats?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas",
+        {
+          data: {
+            cliente: clienteDB.data.id,
+            campana: data.campana,
+            etapa: campanas.filter((campana) => campana.id === data.campana)[0]
+              .etapas[0].id,
+            ultimo: "Nuevo cliente",
+          },
+        }
+      );
+
+      await Swal.fire({
+        icon: "success",
+        title: "Creado",
+        text: "El chat se creo correctamente!",
+      });
+
+      setIsLoading(false);
+      form.resetFields();
+    } catch (error) {
+      setIsLoading(false);
+
+      Swal.fire({
+        icon: "error",
+        title: "Oops...",
+        text: "Algo salio mal!",
+      });
+    }
+  };
+
   const columuns: ColumnsType<IChatsDB> = [
     {
       title: "ID",
       dataIndex: ["id"],
       key: "id",
       render: (value) => <Tag color="blue">{value}C</Tag>,
+    },
+    {
+      title: "Foto",
+      dataIndex: ["foto"],
+      key: "foto",
+      render: (value: string) => {
+        console.log(value);
+
+        return (
+          <Avatar
+            size={50}
+            src={value ? value : nofoto}
+            style={{ backgroundColor: "#87d068" }}
+          />
+        );
+      },
     },
     {
       title: "Nombre",
@@ -260,13 +377,18 @@ const ContactosPage = () => {
       title: "Vendedor",
       dataIndex: ["vendedor", "username"],
       key: "vendedor",
-      filters: users.map((user) => ({
-        text: user.username,
-        value: user.username,
-      })),
+      filters: [
+        {
+          text: "Sin asignar",
+          value: "Sin asignar",
+        },
+        ...users.map((user) => ({
+          text: user.username,
+          value: user.username,
+        })),
+      ],
       onFilter: (value, record) => {
-        if (record.vendedor === null) return false;
-
+        if (value === "Sin asignar" && record.vendedor === null) return true;
         return record.vendedor.username.indexOf(value as string) === 0;
       },
 
@@ -377,6 +499,78 @@ const ContactosPage = () => {
         </div>
       </Modal>
 
+      <Modal
+        width="80%"
+        title="Información del chat"
+        open={openAddUser}
+        onCancel={() => setOpenAddUser(false)}
+        footer={null}
+      >
+        <div className="row">
+          <div className="col-md-12">
+            <Form onFinish={handleFinish} layout="vertical" form={form}>
+              <Form.Item
+                label="Nombre"
+                name="nombre"
+                rules={[
+                  {
+                    required: true,
+                    message: "El nombre es requerido",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                label="Telefono"
+                name="telefono"
+                rules={[
+                  {
+                    required: true,
+                    message: "El telefono es requerido",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+              <Form.Item
+                label="camapaña"
+                name="campana"
+                rules={[
+                  {
+                    required: true,
+                    message: "La camapaña es requerida",
+                  },
+                ]}
+              >
+                <Select>
+                  {campanas.length > 0 &&
+                    campanas.map((campana) => (
+                      <Select.Option key={campana.id} value={campana.id}>
+                        {campana.nombre}
+                      </Select.Option>
+                    ))}
+                </Select>
+              </Form.Item>
+              <Button
+                loading={isLoading}
+                className="mt-2"
+                type="primary"
+                htmlType="submit"
+                style={{
+                  backgroundColor: colorsCosbiome.primary,
+
+                  borderColor: colorsCosbiome.primary,
+                }}
+                block
+              >
+                Agregar
+              </Button>
+            </Form>
+          </div>
+        </div>
+      </Modal>
+
       <div
         className="container-fluid"
         style={{
@@ -389,7 +583,7 @@ const ContactosPage = () => {
           maxHeight: "100vh",
         }}
       >
-        <h1 className="text-center">Contactos</h1>
+        <h1 className="text-center">Contactos: {chats.length}</h1>
 
         <div className="row">
           <div
@@ -401,6 +595,21 @@ const ContactosPage = () => {
             }}
           >
             <DatePicker.RangePicker onChange={handleGetContactos} />
+          </div>
+
+          <div className="col-md-12 mt-5 mb-5">
+            <Button
+              onClick={() => {
+                setOpenAddUser(true);
+              }}
+              type="primary"
+              style={{
+                backgroundColor: colorsCosbiome.primary,
+                borderColor: colorsCosbiome.primary,
+              }}
+            >
+              Agregar contacto
+            </Button>
           </div>
 
           {selectedRowKeys.length > 0 && (
@@ -467,6 +676,7 @@ const ContactosPage = () => {
               columns={columuns}
               dataSource={chats}
               pagination={false}
+              scroll={{ y: "50vh" }}
             />
           </div>
         </div>

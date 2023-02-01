@@ -171,8 +171,8 @@ const MediaCardsComponent = ({
         className="row"
         style={{
           width: "75vw",
-          height: "40vh",
-          maxHeight: "40vh",
+          height: "60vh",
+          maxHeight: "60vh",
           overflowY: "scroll",
         }}
       >

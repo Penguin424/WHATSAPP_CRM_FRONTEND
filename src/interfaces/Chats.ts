@@ -7,6 +7,11 @@ export interface IChatsDB {
   cliente: Cliente;
   campana: Campana;
   etapa: Cliente;
+  foto?: string;
+  noleidos?: number;
+  nota: string;
+  notahistorial: string;
+  fechamarcar: string;
 }
 
 export interface Campana {

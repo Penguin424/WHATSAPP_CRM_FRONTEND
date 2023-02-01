@@ -4,11 +4,13 @@ import {
   SmileOutlined,
   UploadOutlined,
 } from "@ant-design/icons";
-import { Modal, Form, Input, Button, Select } from "antd";
+import { Modal, Form, Input, Button, Select, Avatar, DatePicker } from "antd";
+import { notEqual } from "assert";
 import EmojiPicker from "emoji-picker-react";
+import moment from "moment";
 import React, { useContext, useEffect, useState } from "react";
 import Swal from "sweetalert2";
-
+import nofoto from "../assets/images/nofoto.jpeg";
 import { colorsCosbiome } from "../constants/colorSchemas";
 import useHttp from "../hooks/useHttp";
 import { ICampanasDB } from "../interfaces/Camapanas";
@@ -31,6 +33,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
   const [isEmoji, setIsEmoji] = useState<boolean>(false);
   const [openFiles, setOpenFiles] = useState<boolean>(false);
   const [campanas, setCampanas] = useState<ICampanasDB[]>([]);
+  const [oldChat, setOldChat] = useState<IChatsDB>(chat);
   const [, setUpdate] = useState({});
 
   const chatRef = React.useRef<HTMLDivElement>(null);
@@ -66,6 +69,52 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
   }, [socket, chat]);
 
   useEffect(() => {
+    form.setFieldsValue({
+      nombre: chat.cliente.nombre,
+      telefono: chat.cliente.telefono,
+      nota: chat.nota,
+      fechamarcar: moment(chat.fechamarcar).format("YYYY-MM-DD HH:mm:ss"),
+    });
+
+    if (chat.id !== oldChat.id && chat.noleidos! > 0) {
+      update(
+        `chats/${chat.id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
+        {
+          data: {
+            noleidos: 0,
+          },
+        }
+      );
+    }
+
+    setOldChat(chat);
+  }, [chat]);
+
+  useEffect(() => {
+    if (chat.noleidos! > 0) {
+      update(
+        `chats/${chat.id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
+        {
+          data: {
+            noleidos: 0,
+          },
+        }
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    if (chat.id !== oldChat.id && chat.noleidos! > 0) {
+      update(
+        `chats/${chat.id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
+        {
+          data: {
+            noleidos: 0,
+          },
+        }
+      );
+    }
+
     if (chatRef.current) {
       chatRef.current.scrollTo({
         top: chatRef.current.scrollHeight,
@@ -115,7 +164,11 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
     }
   };
 
-  const handleUpdateClient = async (values: { nombre: string }) => {
+  const handleUpdateClient = async (values: {
+    nombre: string;
+    fechamarcar: string;
+    nota: string;
+  }) => {
     try {
       await update(`clientes/${chat.cliente.id}`, {
         data: {
@@ -128,6 +181,11 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
         {
           data: {
             updateAt: new Date().toISOString(),
+            nota: values.nota,
+            fechamarcar: new Date(values.fechamarcar).toISOString(),
+            notahistorial: `${values.nota} - ${new Date().toLocaleString()}\n${
+              chat.notahistorial
+            }`,
           },
         }
       );
@@ -180,7 +238,10 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
       <Modal
         open={open}
         title={`MODIFICAR CONTADO DE ${chat.cliente.nombre.toUpperCase()}`}
-        onCancel={() => setOpen(false)}
+        onCancel={() => {
+          setOpen(false);
+          form.resetFields();
+        }}
         footer={null}
         width={1000}
       >
@@ -204,6 +265,33 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
           >
             <Input />
           </Form.Item>
+
+          <Form.Item
+            label="nota"
+            rules={[
+              {
+                required: true,
+                message: "Este campo es requerido",
+              },
+            ]}
+            name="nota"
+          >
+            <Input.TextArea />
+          </Form.Item>
+
+          <Form.Item
+            label="fecha y hora a llamar"
+            rules={[
+              {
+                required: true,
+                message: "Este campo es requerido",
+              },
+            ]}
+            name="fechamarcar"
+          >
+            <Input type="datetime-local" />
+          </Form.Item>
+
           <Button block type="primary" htmlType="submit">
             Actuilizar
           </Button>
@@ -215,6 +303,10 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
           width: "100%",
           height: "100%",
           backgroundColor: colorsCosbiome.secondary,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
         <div
@@ -232,6 +324,20 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
             boxShadow: `0px 0px 10px 0px ${colorsCosbiome.primary}`,
           }}
         >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-around",
+              alignItems: "center",
+              width: "10%",
+            }}
+          >
+            <Avatar
+              size={50}
+              src={chat.foto ? chat.foto : nofoto}
+              style={{ backgroundColor: "#87d068" }}
+            />
+          </div>
           <div
             style={{
               display: "flex",
@@ -382,12 +488,13 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
               )}
             </div>
           </div>
+
           <div
             style={{
               display: "flex",
               justifyContent: "space-around",
               alignItems: "center",
-              width: "33%",
+              width: "56%",
             }}
           >
             <p
@@ -398,18 +505,17 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
               }}
               className="text-center"
             >
-              {chat.cliente.nombre}
-            </p>
-          </div>
+              {/* <Avatar
+                  size={50}
+                  src={chat.foto ? chat.foto : nofoto}
+                  style={{ backgroundColor: "#87d068" }}
+                /> */}
 
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-around",
-              alignItems: "center",
-              width: "33%",
-            }}
-          >
+              {chat.cliente.nombre}
+
+              <br />
+              {chat.cliente.telefono?.split("@")[0].substring(3)}
+            </p>
             <EditFilled
               onClick={() => {
                 setOpen(true);
@@ -429,11 +535,11 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
         <div
           ref={chatRef}
           style={{
-            height: "80%",
+            height: "70%",
             width: "100%",
             //   backgroundColor: "green",
             overflowY: "scroll",
-            maxHeight: "83%",
+            maxHeight: "70%",
             scrollBehavior: "smooth",
           }}
         >
@@ -498,6 +604,21 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                           alt={message.body}
                           style={{ width: "50%", borderRadius: "10px" }}
                         />
+                      ) : message.dataWS._data.ctwaContext ? (
+                        <p>
+                          <img
+                            // src={`data:image/jpeg;base64,${message.dataWS._data.ctwaContext.thumbnail}`}
+                            src={message.dataWS._data.ctwaContext.thumbnailUrl}
+                            alt={message.dataWS._data.ctwaContext.thumbnail}
+                          />
+                          <br />
+                          {message.dataWS._data.ctwaContext.title}
+                          <br />
+                          {message.dataWS._data.ctwaContext.description}
+                          <br />
+                          <br />
+                          {message.body}
+                        </p>
                       ) : (
                         <p
                           style={{
@@ -524,7 +645,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
         <form
           onSubmit={handleSubmitMessage}
           style={{
-            height: "10%",
+            height: "5%",
             width: "100%",
             //   backgroundColor: "blue",
 

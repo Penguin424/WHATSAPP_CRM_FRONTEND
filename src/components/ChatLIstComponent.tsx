@@ -2,23 +2,58 @@ import React, { useContext, useEffect, useState } from "react";
 import { colorsCosbiome } from "../constants/colorSchemas";
 import useHttp from "../hooks/useHttp";
 import { IChatsDB } from "../interfaces/Chats";
+import { User } from "../interfaces/Login";
 import { GlobalContext } from "../providers/GlobalProvider";
 import { strapiFlatten } from "../utils/flatten";
+import CardChatListComponent from "./CardChatListComponent";
 
 interface IPropsChatList {
   chatSelect: IChatsDB | undefined;
   setChatSelect: React.Dispatch<React.SetStateAction<IChatsDB | undefined>>;
+  filters: string;
+  isDailyChat?: boolean;
 }
 
-const ChatLIstComponent = ({ chatSelect, setChatSelect }: IPropsChatList) => {
+const ChatLIstComponent = ({
+  chatSelect,
+  setChatSelect,
+  filters,
+  isDailyChat,
+}: IPropsChatList) => {
   const [chats, setChats] = useState<IChatsDB[]>([]);
   const { socket } = useContext(GlobalContext);
   const { get } = useHttp();
 
   useEffect(() => {
     handleGetChats();
+    // eslint-disable-next-line
+  }, [filters]);
+
+  useEffect(() => {
+    if (isDailyChat) {
+      socket.on("chat:create", (dat: any) => {
+        let data: IChatsDB;
+
+        if (dat.data) {
+          data = strapiFlatten(dat.data);
+        } else {
+          data = strapiFlatten(dat);
+        }
+
+        setChats((chats) => {
+          const index = chats.findIndex((chat) => chat.id === data.id);
+
+          if (index !== -1) return chats;
+
+          return [data, ...chats];
+        });
+      });
+    }
 
     socket.on("chat:update", (data: any) => {
+      const user: User | { id: 0 } = JSON.parse(
+        sessionStorage.getItem("user") || "{}"
+      );
       let flatten: IChatsDB;
 
       if (data.data) {
@@ -27,9 +62,13 @@ const ChatLIstComponent = ({ chatSelect, setChatSelect }: IPropsChatList) => {
         flatten = strapiFlatten(data);
       }
 
-      if (flatten.vendedor === null) return;
+      if (!isDailyChat) {
+        if (flatten.vendedor === null) return;
+      } else {
+        flatten.vendedor = { id: user.id } as any;
+      }
 
-      if (flatten.vendedor.id === 1) {
+      if (flatten.vendedor.id === user.id || isDailyChat) {
         setChats((prevState) => {
           return [
             ...prevState.filter((chat) => chat.id !== flatten.id),
@@ -55,6 +94,8 @@ const ChatLIstComponent = ({ chatSelect, setChatSelect }: IPropsChatList) => {
 
     return () => {
       socket.off("chat:update");
+
+      if (isDailyChat) socket.off("chat:create");
     };
 
     // eslint-disable-next-line
@@ -62,52 +103,28 @@ const ChatLIstComponent = ({ chatSelect, setChatSelect }: IPropsChatList) => {
 
   const handleGetChats = async () => {
     const chatDB: { data: IChatsDB[] } = await get(
-      `chats?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas&sort=updatedAt:DESC&filters[vendedor][id][$eq]=${1}&pagination[limit]=100000`
+      `chats?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas&sort=updatedAt:DESC&${filters}`
     );
 
     setChats(chatDB.data);
   };
+
   return (
-    <ul className="list-group">
-      {chats
-        .sort((a, b) => (a.updatedAt > b.updatedAt ? -1 : 1))
-        .filter((chat) => chat.cliente !== null)
-        .map((chat) => (
-          <li
-            className="list-group-item mb-2"
-            style={{
-              cursor: "pointer",
-              backgroundColor:
-                chat.id === chatSelect?.id
-                  ? colorsCosbiome.tertiary
-                  : colorsCosbiome.primary,
-              borderRadius: "10px",
-              // color: "black",
-            }}
-            key={chat.id}
-            onClick={() => {
-              setChatSelect(chat);
-            }}
-          >
-            <div className="d-flex justify-content-between">
-              <div>
-                <h5
-                  style={{
-                    color: "white",
-                  }}
-                >
-                  {chat.cliente.nombre}
-                </h5>
-                <p>{chat.cliente.telefono}</p>
-                <small>
-                  {chat.ultimo} <br />{" "}
-                  {new Date(chat.updatedAt).toLocaleString()}
-                </small>
-              </div>
-            </div>
-          </li>
-        ))}
-    </ul>
+    <>
+      <ul className="list-group">
+        {chats
+          .sort((a, b) => (a.updatedAt > b.updatedAt ? -1 : 1))
+          .filter((chat) => chat.cliente !== null)
+          .map((chat) => (
+            <CardChatListComponent
+              key={chat.id}
+              chat={chat}
+              chatSelect={chatSelect}
+              setChatSelect={setChatSelect}
+            />
+          ))}
+      </ul>
+    </>
   );
 };
 
