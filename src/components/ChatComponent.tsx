@@ -1,14 +1,19 @@
+import { EditFilled, SmileOutlined, UploadOutlined } from "@ant-design/icons";
 import {
-  EditFilled,
-  Loading3QuartersOutlined,
-  SmileOutlined,
-  UploadOutlined,
-} from "@ant-design/icons";
-import { Modal, Form, Input, Button, Select, Avatar, DatePicker } from "antd";
-import { notEqual } from "assert";
+  Modal,
+  Form,
+  Input,
+  Button,
+  Select,
+  Avatar,
+  Upload,
+  InputRef,
+} from "antd";
+
 import EmojiPicker from "emoji-picker-react";
 import moment from "moment";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
+import { useDropzone } from "react-dropzone";
 import Swal from "sweetalert2";
 import nofoto from "../assets/images/nofoto.jpeg";
 import { colorsCosbiome } from "../constants/colorSchemas";
@@ -35,12 +40,32 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
   const [campanas, setCampanas] = useState<ICampanasDB[]>([]);
   const [oldChat, setOldChat] = useState<IChatsDB>(chat);
   const [, setUpdate] = useState({});
+  const [file, setFile] = useState<FormData>();
+  const [image64, setImage64] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const chatRef = React.useRef<HTMLDivElement>(null);
+  const inputFileRef = React.useRef<HTMLInputElement | null>();
 
   const { socket } = useContext(GlobalContext);
-  const { get, post, update } = useHttp();
+  const { get, post, update, uploadfile } = useHttp();
   const [form] = Form.useForm();
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    const fileLocal = new FormData();
+
+    fileLocal.append(
+      "key",
+      `chatscrm/${chat.cliente.telefono}/${acceptedFiles[0].name}`
+    );
+    fileLocal.append("file", acceptedFiles[0]);
+
+    const img64 = await toBase64(fileLocal.get("file"));
+
+    setImage64(img64 as string);
+    setFile(fileLocal);
+  }, []);
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   useEffect(() => {
     handleGetMessages();
@@ -124,6 +149,14 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
     // eslint-disable-next-line
   }, [messages]);
 
+  const toBase64 = (fileFun: any) =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(fileFun);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+
   const handleGetCampanas = async () => {
     const campanasDB: { data: ICampanasDB[] } = await get(
       "campanas?populate[0]=etapas&populate[1]=chats&populate[2]=chats.etapa&pagination[limit]=100000"
@@ -203,6 +236,49 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
       Swal.fire({
         icon: "error",
         title: "Error al actualizar",
+        showConfirmButton: false,
+        timer: 1500,
+      });
+    }
+  };
+
+  const handleSendImage = async () => {
+    try {
+      if (file) {
+        setIsLoading(true);
+
+        const url = await uploadfile(file);
+
+        await post("mensajes", {
+          mensaje: url,
+          a: chat.cliente.telefono,
+          de: "5213319747514@c.us",
+          vendedor: 1,
+          chat: chat.id,
+          isMedia: true,
+        });
+
+        setIsLoading(false);
+        setFile(undefined);
+        setImage64("");
+      } else {
+        setIsLoading(false);
+        setFile(undefined);
+        setImage64("");
+        await Swal.fire({
+          icon: "error",
+          title: "Error al enviar imagen",
+          showConfirmButton: false,
+          timer: 1500,
+        });
+      }
+    } catch (error) {
+      setIsLoading(false);
+      setFile(undefined);
+      setImage64("");
+      Swal.fire({
+        icon: "error",
+        title: "Error al enviar imagen",
         showConfirmButton: false,
         timer: 1500,
       });
@@ -533,7 +609,6 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
         </div>
 
         <div
-          ref={chatRef}
           style={{
             height: "70%",
             width: "100%",
@@ -542,9 +617,92 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
             maxHeight: "70%",
             scrollBehavior: "smooth",
           }}
+          {...getRootProps({
+            onClick: (event) => event.stopPropagation(),
+            ref: chatRef,
+          })}
         >
-          {messages.length === 0 ? (
-            <Loading3QuartersOutlined />
+          <input {...getInputProps()} disabled />
+          {isDragActive || file !== undefined ? (
+            <div
+              style={{
+                height: "100%",
+                width: "100%",
+                scrollBehavior: "smooth",
+                border: "2px dashed white",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              {file !== undefined ? (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                  }}
+                  className="row"
+                >
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "80%",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                    className="col-md-12"
+                  >
+                    <img
+                      src={image64}
+                      alt="imagebn"
+                      width="50%"
+                      height="100%"
+                    />
+                  </div>
+                  <div
+                    style={{
+                      width: "100%",
+                      height: "20%",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                    className="col-md-12"
+                  >
+                    <Button
+                      onClick={() => {
+                        setFile(undefined);
+                        setImage64("");
+                      }}
+                      style={{
+                        width: "40%",
+                        backgroundColor: "red",
+                        borderColor: "red",
+                        color: "white",
+                        marginRight: "5px",
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handleSendImage}
+                      loading={isLoading}
+                      style={{
+                        width: "40%",
+                        backgroundColor: colorsCosbiome.primary,
+                        borderColor: colorsCosbiome.primary,
+                        color: "white",
+                      }}
+                    >
+                      Enviar
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <p>ARRASTA TU IMAGEN AQUI</p>
+              )}
+            </div>
           ) : (
             messages
               .map((message) => {
@@ -643,6 +801,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
         
       > */}
         <form
+          hidden={file !== undefined}
           onSubmit={handleSubmitMessage}
           style={{
             height: "5%",
@@ -700,8 +859,49 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
               onClick={() => {
                 setOpenFiles(!openFiles);
               }}
+              className="mr-2"
             >
               <UploadOutlined />
+            </Button>
+
+            <Button
+              block
+              style={{
+                backgroundColor: colorsCosbiome.primary,
+                borderColor: colorsCosbiome.primary,
+                color: "white",
+              }}
+              onClick={() => {
+                if (inputFileRef.current) {
+                  inputFileRef.current.click();
+                }
+              }}
+            >
+              Carpetas
+              <input
+                style={{
+                  display: "none",
+                }}
+                type="file"
+                onChange={async (e) => {
+                  if (e.target.files) {
+                    const fileLocal = new FormData();
+                    let acceptedFiles = e.target.files;
+
+                    fileLocal.append(
+                      "key",
+                      `chatscrm/${chat.cliente.telefono}/${acceptedFiles[0].name}`
+                    );
+                    fileLocal.append("file", acceptedFiles[0]);
+
+                    const img64 = await toBase64(fileLocal.get("file"));
+
+                    setImage64(img64 as string);
+                    setFile(fileLocal);
+                  }
+                }}
+                ref={(e) => (inputFileRef.current = e)}
+              />
             </Button>
           </div>
 
