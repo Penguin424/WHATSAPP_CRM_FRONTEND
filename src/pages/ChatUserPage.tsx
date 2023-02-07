@@ -54,7 +54,7 @@ const ChatUserPage = () => {
                 onChange={(date: Date) => {
                   setDate(date);
 
-                  console.log(date);
+                  setChatSelect(undefined);
                 }}
                 value={date}
               />
@@ -74,6 +74,7 @@ const ChatUserPage = () => {
             }}
           >
             <ChatLIstComponent
+              dataSelect={date}
               chatSelect={chatSelect}
               setChatSelect={setChatSelect}
               filters={`filters[vendedor][id][$eq]=${1}&filters[$and][1][fechamarcar][$gte]=${moment(

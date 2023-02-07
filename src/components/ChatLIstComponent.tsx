@@ -1,5 +1,4 @@
 import React, { useContext, useEffect, useState } from "react";
-import { colorsCosbiome } from "../constants/colorSchemas";
 import useHttp from "../hooks/useHttp";
 import { IChatsDB } from "../interfaces/Chats";
 import { User } from "../interfaces/Login";
@@ -12,6 +11,7 @@ interface IPropsChatList {
   setChatSelect: React.Dispatch<React.SetStateAction<IChatsDB | undefined>>;
   filters: string;
   isDailyChat?: boolean;
+  dataSelect?: Date;
 }
 
 const ChatLIstComponent = ({
@@ -19,6 +19,7 @@ const ChatLIstComponent = ({
   setChatSelect,
   filters,
   isDailyChat,
+  dataSelect,
 }: IPropsChatList) => {
   const [chats, setChats] = useState<IChatsDB[]>([]);
   const { socket } = useContext(GlobalContext);
@@ -68,7 +69,11 @@ const ChatLIstComponent = ({
         flatten.vendedor = { id: user.id } as any;
       }
 
-      if (flatten.vendedor.id === user.id || isDailyChat) {
+      if (
+        (flatten.vendedor.id === user.id || isDailyChat) &&
+        new Date(flatten.fechamarcar).toLocaleDateString() ===
+          new Date(dataSelect!).toLocaleDateString()
+      ) {
         setChats((prevState) => {
           return [
             ...prevState.filter((chat) => chat.id !== flatten.id),

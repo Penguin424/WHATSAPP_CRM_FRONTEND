@@ -45,6 +45,7 @@ const ContactoDiaClienetes = () => {
               .endOf("D")
               .toISOString()}&pagination[limit]=100000&&filters[$and][2][cliente][nombre][$notNull]=true`}
             isDailyChat={true}
+            dataSelect={new Date()}
           />
         </div>
         <div

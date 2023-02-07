@@ -1,14 +1,5 @@
 import { EditFilled, SmileOutlined, UploadOutlined } from "@ant-design/icons";
-import {
-  Modal,
-  Form,
-  Input,
-  Button,
-  Select,
-  Avatar,
-  Upload,
-  InputRef,
-} from "antd";
+import { Modal, Form, Input, Button, Select, Avatar, Image } from "antd";
 
 import EmojiPicker from "emoji-picker-react";
 import moment from "moment";
@@ -64,6 +55,8 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
 
     setImage64(img64 as string);
     setFile(fileLocal);
+
+    // eslint-disable-next-line
   }, []);
   const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
@@ -113,6 +106,8 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
     }
 
     setOldChat(chat);
+
+    // eslint-disable-next-line
   }, [chat]);
 
   useEffect(() => {
@@ -126,6 +121,8 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
         }
       );
     }
+
+    // eslint-disable-next-line
   }, []);
 
   useEffect(() => {
@@ -302,6 +299,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
             position: "absolute",
             right: "15%",
             bottom: "10%",
+            zIndex: 100,
           }}
         >
           <EmojiPicker
@@ -747,10 +745,16 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                       }}
                     >
                       {message.dataWS.type === "image" ? (
-                        <img
+                        <Image
                           src={`data:image/jpeg;base64,${message.body}`}
                           alt={message.body}
-                          style={{ width: "50%", borderRadius: "10px" }}
+                          style={{
+                            // width: "50%",
+                            borderRadius: "10px",
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                          }}
                         />
                       ) : message.dataWS.type === "video" ? (
                         <VideoComponent videoBase64={message.body} />
@@ -816,15 +820,14 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
           className="row"
         >
           <div className="col-md-8">
-            <Input
-              width="100%"
+            <Input.TextArea
+              rows={1}
               placeholder="Escribe un mensaje"
               required
               value={redaction}
               onChange={(e) => {
                 setRedaction(e.target.value);
               }}
-              type="text"
             />
           </div>
           <div
@@ -876,6 +879,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                   inputFileRef.current.click();
                 }
               }}
+              className="mr-2"
             >
               Carpetas
               <input
