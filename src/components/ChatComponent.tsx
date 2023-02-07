@@ -385,6 +385,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
       >
         <div
           style={{
+            zIndex: 100,
             display: "flex",
             justifyContent: "space-around",
             alignItems: "center",
