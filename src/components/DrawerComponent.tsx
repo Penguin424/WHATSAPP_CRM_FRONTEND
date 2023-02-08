@@ -1,8 +1,9 @@
 import { MenuFoldOutlined } from "@ant-design/icons";
 import { Drawer, Menu } from "antd";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { colorsCosbiome } from "../constants/colorSchemas";
+import { GlobalContext } from "../providers/GlobalProvider";
 
 interface IPropsDrawer {
   children: React.ReactNode;
@@ -12,6 +13,7 @@ const DrawerComponent = ({ children }: IPropsDrawer) => {
   const [open, setOpen] = useState(false);
 
   const navigate = useNavigate();
+  const { roleUser } = useContext(GlobalContext);
 
   return (
     <>
@@ -36,6 +38,7 @@ const DrawerComponent = ({ children }: IPropsDrawer) => {
       >
         <Menu>
           <Menu.Item
+            hidden={roleUser !== "ADMIN"}
             key="1"
             onClick={() => {
               navigate("/contactos");
@@ -53,6 +56,7 @@ const DrawerComponent = ({ children }: IPropsDrawer) => {
           </Menu.Item>
 
           <Menu.Item
+            hidden={roleUser !== "ADMIN"}
             key="3"
             onClick={() => {
               navigate("/campañas");
@@ -61,6 +65,7 @@ const DrawerComponent = ({ children }: IPropsDrawer) => {
             CAMPAÑAS
           </Menu.Item>
           <Menu.Item
+            hidden={roleUser !== "ADMIN"}
             key="4"
             onClick={() => {
               navigate("/contactodia");

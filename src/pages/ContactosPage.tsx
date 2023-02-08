@@ -22,7 +22,7 @@ import { IUsuarioDB } from "../interfaces/Usuarios";
 import Swal from "sweetalert2";
 import { GlobalContext } from "../providers/GlobalProvider";
 import { strapiFlatten } from "../utils/flatten";
-import _, { filter } from "lodash";
+import _ from "lodash";
 import { ICampanasDB } from "../interfaces/Camapanas";
 import nofoto from "../assets/images/nofoto.jpeg";
 
@@ -388,7 +388,9 @@ const ContactosPage = () => {
         })),
       ],
       onFilter: (value, record) => {
-        if (value === "Sin asignar" && record.vendedor === null) return true;
+        if (value !== "Sin asignar" && record.vendedor === null) return false;
+
+        if (value === "Sin asignar" && !record.vendedor) return true;
         return record.vendedor.username.indexOf(value as string) === 0;
       },
 

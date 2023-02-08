@@ -1,10 +1,12 @@
 import { Button, Form, Input } from "antd";
+import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import COSBIOME from "../assets/logos/cosbiome.png";
 import { colorsCosbiome } from "../constants/colorSchemas";
 import useHttp from "../hooks/useHttp";
 import { IResponseLogin } from "../interfaces/Login";
+import { GlobalContext } from "../providers/GlobalProvider";
 
 interface IFormData {
   identifier: string;
@@ -13,17 +15,34 @@ interface IFormData {
 
 const LoginPage = () => {
   const navigation = useNavigate();
-  const { login } = useHttp();
+  const { login, get } = useHttp();
+  const { setIdUser, setRoleUser } = useContext(GlobalContext);
 
   const onFinish = async (values: IFormData) => {
     try {
-      const responseLogin: IResponseLogin = await login("auth/local", {
-        identifier: values.identifier,
-        password: values.password,
-      });
+      const responseLogin: IResponseLogin = await login(
+        "auth/local?populate[0]=role",
+        {
+          identifier: values.identifier,
+          password: values.password,
+        }
+      );
 
       sessionStorage.setItem("token", responseLogin.jwt);
       sessionStorage.setItem("user", JSON.stringify(responseLogin.user));
+
+      if (setIdUser && setRoleUser) {
+        const meDB: { role: { name: string } } = await get(
+          "users/me?populate[0]=role"
+        );
+
+        console.log(meDB);
+
+        setIdUser(responseLogin.user.id);
+        setRoleUser(meDB.role.name);
+
+        sessionStorage.setItem("role", meDB.role.name);
+      }
 
       navigation("/crm");
     } catch (error) {

@@ -1,14 +1,17 @@
 import moment from "moment";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { Calendar } from "react-calendar";
 import ChatComponent from "../components/ChatComponent";
 import ChatLIstComponent from "../components/ChatLIstComponent";
 import { colorsCosbiome } from "../constants/colorSchemas";
 import { IChatsDB } from "../interfaces/Chats";
+import { GlobalContext } from "../providers/GlobalProvider";
 
 const ChatUserPage = () => {
   const [chatSelect, setChatSelect] = useState<IChatsDB | undefined>();
   const [date, setDate] = useState<Date>(new Date());
+
+  const { idUser } = useContext(GlobalContext);
 
   return (
     <div
@@ -77,7 +80,7 @@ const ChatUserPage = () => {
               dataSelect={date}
               chatSelect={chatSelect}
               setChatSelect={setChatSelect}
-              filters={`filters[vendedor][id][$eq]=${1}&filters[$and][1][fechamarcar][$gte]=${moment(
+              filters={`filters[vendedor][id][$eq]=${idUser}&filters[$and][1][fechamarcar][$gte]=${moment(
                 date
               )
                 .startOf("D")
