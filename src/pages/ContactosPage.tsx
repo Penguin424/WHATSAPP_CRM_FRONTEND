@@ -134,8 +134,6 @@ const ContactosPage = () => {
   const handleGetUsers = async () => {
     const usersDB = await get("users?pagination[limit]=100000");
 
-    console.log(usersDB);
-
     setUsers(usersDB);
   };
 
@@ -147,6 +145,7 @@ const ContactosPage = () => {
 
       const data = {
         vendedor: userId,
+        fechamarcar: new Date().toISOString(),
       };
 
       const chatUpdate = await update(
@@ -202,6 +201,7 @@ const ContactosPage = () => {
           `chats/${id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
           {
             data: data,
+            fechamarcar: new Date().toISOString(),
           }
         );
       }
@@ -302,8 +302,6 @@ const ContactosPage = () => {
       dataIndex: ["foto"],
       key: "foto",
       render: (value: string) => {
-        console.log(value);
-
         return (
           <Avatar
             size={50}
