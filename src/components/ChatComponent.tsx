@@ -782,6 +782,15 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                           <br />
                           {message.body}
                         </p>
+                      ) : message.dataWS.type === "document" ? (
+                        <p>
+                          <a
+                            href={`data:application/pdf;base64,${message.body}`}
+                            download="file.pdf"
+                          >
+                            {message.dataWS.body}
+                          </a>
+                        </p>
                       ) : (
                         <p
                           style={{
