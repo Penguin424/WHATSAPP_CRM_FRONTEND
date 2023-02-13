@@ -768,7 +768,11 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                           style={{ width: "50%", borderRadius: "10px" }}
                         />
                       ) : message.dataWS._data.ctwaContext ? (
-                        <p>
+                        <p
+                          style={{
+                            wordBreak: "break-word",
+                          }}
+                        >
                           <img
                             // src={`data:image/jpeg;base64,${message.dataWS._data.ctwaContext.thumbnail}`}
                             src={message.dataWS._data.ctwaContext.thumbnailUrl}
