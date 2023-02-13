@@ -1,5 +1,6 @@
 import { MenuFoldOutlined } from "@ant-design/icons";
 import { Drawer, Menu } from "antd";
+import SubMenu from "antd/lib/menu/SubMenu";
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { colorsCosbiome } from "../constants/colorSchemas";
@@ -46,6 +47,7 @@ const DrawerComponent = ({ children }: IPropsDrawer) => {
           >
             CONTACTOS
           </Menu.Item>
+
           <Menu.Item
             key="2"
             onClick={() => {
@@ -64,6 +66,7 @@ const DrawerComponent = ({ children }: IPropsDrawer) => {
           >
             CAMPAÑAS
           </Menu.Item>
+
           <Menu.Item
             hidden={roleUser !== "ADMIN"}
             key="4"
@@ -73,6 +76,17 @@ const DrawerComponent = ({ children }: IPropsDrawer) => {
           >
             CONTACTO DEL DÍA
           </Menu.Item>
+
+          <SubMenu title="REPORTES" key="5">
+            <Menu.Item
+              key="5.1"
+              onClick={() => {
+                navigate("/reportes/calificacionesvendedor");
+              }}
+            >
+              CALIFICACIONES
+            </Menu.Item>
+          </SubMenu>
         </Menu>
       </Drawer>
       {children}

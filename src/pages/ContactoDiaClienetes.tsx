@@ -40,6 +40,7 @@ const ContactoDiaClienetes = () => {
             chatSelect={chatSelect}
             setChatSelect={setChatSelect}
             filters={`filters[$and][0][createdAt][$gte]=${moment()
+              .add(-1, "d")
               .startOf("D")
               .toISOString()}&filters[$and][1][createdAt][$lte]=${moment()
               .endOf("D")

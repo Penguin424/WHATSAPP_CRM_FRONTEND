@@ -6,6 +6,7 @@ import GlobalProvider from "./providers/GlobalProvider";
 import LoginPage from "./pages/LoginPage";
 import CampanasPage from "./pages/CampanasPage";
 import ContactoDiaClienetes from "./pages/ContactoDiaClienetes";
+import CalificacionesVendedor from "./pages/reports/CalificacionesVendedor";
 
 const App = () => {
   return (
@@ -18,6 +19,13 @@ const App = () => {
             <Route path="/contactos" element={<ContactosPage />} />
             <Route path="/campañas" element={<CampanasPage />} />
             <Route path="/contactodia" element={<ContactoDiaClienetes />} />
+
+            <Route path="/reportes">
+              <Route
+                path="calificacionesvendedor"
+                element={<CalificacionesVendedor />}
+              />
+            </Route>
           </Routes>
         </DrawerComponent>
       </GlobalProvider>

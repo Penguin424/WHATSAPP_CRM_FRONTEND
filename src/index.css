@@ -19,3 +19,18 @@
   ::-webkit-scrollbar-thumb:hover {
     background: #36787D; 
   }
+
+  .react-calendar {
+    min-width: 100%;
+    background: white;
+    border: 1px solid #a0a096;
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.125em;
+    
+  }
+
+  .clickable-td:hover{
+    background-color: #4CAAB1;
+    color: white;
+  }
+
