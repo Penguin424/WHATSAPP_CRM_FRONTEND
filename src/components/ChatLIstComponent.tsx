@@ -1,10 +1,12 @@
 import React, { useContext, useEffect, useState } from "react";
+import { colorsCosbiome } from "../constants/colorSchemas";
 import useHttp from "../hooks/useHttp";
 import { IChatsDB } from "../interfaces/Chats";
 import { User } from "../interfaces/Login";
 import { GlobalContext } from "../providers/GlobalProvider";
 import { strapiFlatten } from "../utils/flatten";
 import CardChatListComponent from "./CardChatListComponent";
+import _ from "lodash";
 
 interface IPropsChatList {
   chatSelect: IChatsDB | undefined;
@@ -116,19 +118,51 @@ const ChatLIstComponent = ({
 
   return (
     <>
-      <ul className="list-group">
-        {chats
-          .sort((a, b) => (a.updatedAt > b.updatedAt ? -1 : 1))
-          .filter((chat) => chat.cliente !== null)
-          .map((chat) => (
-            <CardChatListComponent
-              key={chat.id}
-              chat={chat}
-              chatSelect={chatSelect}
-              setChatSelect={setChatSelect}
-            />
-          ))}
-      </ul>
+      <div className="row">
+        {_.uniq(
+          chats.map((chat) => {
+            return chat.fechamarcar.split("T")[1].split(".")[0].split(":")[0];
+          })
+        )
+          .sort((a, b) => (a > b ? 1 : -1))
+          .map((hour) => {
+            return (
+              <div className="col-md-12 mb-5">
+                <h3
+                  style={{
+                    color: "white",
+                    backgroundColor: colorsCosbiome.tertiary,
+                    padding: "10px",
+                    borderRadius: "5px",
+                  }}
+                  className="text-center"
+                >
+                  {hour}:00
+                </h3>
+                <ul className="list-group">
+                  {chats
+                    .sort((a, b) => (a.updatedAt > b.updatedAt ? -1 : 1))
+                    .filter(
+                      (chat) =>
+                        chat.cliente !== null &&
+                        chat.fechamarcar
+                          .split("T")[1]
+                          .split(".")[0]
+                          .split(":")[0] === hour
+                    )
+                    .map((chat) => (
+                      <CardChatListComponent
+                        key={chat.id}
+                        chat={chat}
+                        chatSelect={chatSelect}
+                        setChatSelect={setChatSelect}
+                      />
+                    ))}
+                </ul>
+              </div>
+            );
+          })}
+      </div>
     </>
   );
 };

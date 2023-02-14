@@ -63,7 +63,6 @@ const ChatUserPage = () => {
               />
             </div>
           </div>
-
           <div
             className="mt-5"
             style={{

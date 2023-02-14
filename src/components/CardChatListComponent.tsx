@@ -1,8 +1,7 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { colorsCosbiome } from "../constants/colorSchemas";
 import { IChatsDB } from "../interfaces/Chats";
 import nofoto from "../assets/images/nofoto.jpeg";
-import useHttp from "../hooks/useHttp";
 
 interface IPropsCardChatList {
   chat: IChatsDB;
@@ -15,8 +14,6 @@ const CardChatListComponent = ({
   chatSelect,
   setChatSelect,
 }: IPropsCardChatList) => {
-  const { update } = useHttp();
-
   return (
     <li
       className="list-group-item mb-2"
@@ -74,6 +71,10 @@ const CardChatListComponent = ({
               }}
             >
               {chat.cliente.nombre}
+              {new Date(chat.createdAt).toLocaleDateString() ===
+              new Date().toLocaleDateString()
+                ? " - NUEVO"
+                : ""}
             </h5>
           </div>
           {/* <br />
