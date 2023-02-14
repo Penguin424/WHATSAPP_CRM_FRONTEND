@@ -7,6 +7,7 @@ import LoginPage from "./pages/LoginPage";
 import CampanasPage from "./pages/CampanasPage";
 import ContactoDiaClienetes from "./pages/ContactoDiaClienetes";
 import CalificacionesVendedor from "./pages/reports/CalificacionesVendedor";
+import { ToastContainer } from "react-toastify";
 
 const App = () => {
   return (
@@ -28,6 +29,7 @@ const App = () => {
             </Route>
           </Routes>
         </DrawerComponent>
+        <ToastContainer />
       </GlobalProvider>
     </BrowserRouter>
   );

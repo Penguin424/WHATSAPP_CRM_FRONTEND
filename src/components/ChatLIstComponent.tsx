@@ -7,6 +7,7 @@ import { GlobalContext } from "../providers/GlobalProvider";
 import { strapiFlatten } from "../utils/flatten";
 import CardChatListComponent from "./CardChatListComponent";
 import _ from "lodash";
+import { toast } from "react-toastify";
 
 interface IPropsChatList {
   chatSelect: IChatsDB | undefined;
@@ -69,6 +70,25 @@ const ChatLIstComponent = ({
         if (flatten.vendedor === null) return;
       } else {
         flatten.vendedor = { id: user.id } as any;
+      }
+
+      if (flatten.vendedor.id === user.id && flatten.noleidos! > 0) {
+        console.log(flatten);
+
+        toast(
+          <p>
+            <b>{flatten.cliente.nombre}</b>
+            <br />
+            Mesaje: <b>{flatten.ultimo}</b>
+          </p>,
+          {
+            icon: "📩",
+            autoClose: false,
+            onClick: () => {
+              setChatSelect(flatten);
+            },
+          }
+        );
       }
 
       if (

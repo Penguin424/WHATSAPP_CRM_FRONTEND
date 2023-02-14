@@ -174,6 +174,15 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
     try {
       e.preventDefault();
 
+      await update(
+        `chats/${chat.id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
+        {
+          data: {
+            noleidos: 0,
+          },
+        }
+      );
+
       await post("mensajes", {
         mensaje: redaction,
         a: chat.cliente.telefono,
@@ -245,6 +254,15 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
         setIsLoading(true);
 
         const url = await uploadfile(file);
+
+        await update(
+          `chats/${chat.id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
+          {
+            data: {
+              noleidos: 0,
+            },
+          }
+        );
 
         await post("mensajes", {
           mensaje: url,
