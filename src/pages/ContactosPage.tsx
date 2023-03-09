@@ -320,7 +320,7 @@ const ContactosPage = () => {
       title: "Telefono",
       dataIndex: ["cliente", "telefono"],
       key: "telefono",
-      render: (value: string) => value.substring(3).split("@")[0],
+      render: (value: string) => value.split("@")[0],
     },
     {
       title: "Ultimo mensaje",

@@ -20,7 +20,7 @@ export const GlobalContext = createContext({
 } as IGlobalContext);
 
 const GlobalProvider = ({ children }: any) => {
-  const { socketIo, online } = useSocket("http://192.168.1.147:1337/");
+  const { socketIo, online } = useSocket("http://192.168.1.63:1337/");
   const [idUser, setIdUser] = useState(0);
   const [roleUser, setRoleUser] = useState("");
 

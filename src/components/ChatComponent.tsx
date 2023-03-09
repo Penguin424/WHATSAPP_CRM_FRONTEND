@@ -580,6 +580,30 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                 </Select>
               )}
             </div>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+              className="ml-5"
+            >
+              <EditFilled
+                onClick={() => {
+                  setOpen(true);
+                  form.setFieldsValue({
+                    nombre: chat.cliente.nombre,
+                  });
+                }}
+                style={{
+                  fontSize: "1.5rem",
+                  cursor: "pointer",
+                  color: "white",
+                }}
+              />
+            </div>
           </div>
 
           <div
@@ -607,21 +631,8 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
               {chat.cliente.nombre}
 
               <br />
-              {chat.cliente.telefono?.split("@")[0].substring(3)}
+              {chat.cliente.telefono?.split("@")[0]}
             </p>
-            <EditFilled
-              onClick={() => {
-                setOpen(true);
-                form.setFieldsValue({
-                  nombre: chat.cliente.nombre,
-                });
-              }}
-              style={{
-                fontSize: "1.5rem",
-                cursor: "pointer",
-                color: "white",
-              }}
-            />
           </div>
         </div>
 

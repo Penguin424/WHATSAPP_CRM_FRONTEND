@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const useHttp = () => {
-  const endpointserver = "http://192.168.1.147:1337/api/";
+  const endpointserver = "http://192.168.1.63:1337/api/";
 
   const get = async (url: string): Promise<any> => {
     try {

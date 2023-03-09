@@ -8,6 +8,7 @@ import { strapiFlatten } from "../utils/flatten";
 import CardChatListComponent from "./CardChatListComponent";
 import _ from "lodash";
 import { toast } from "react-toastify";
+import { Input, Select } from "antd";
 
 interface IPropsChatList {
   chatSelect: IChatsDB | undefined;
@@ -25,7 +26,9 @@ const ChatLIstComponent = ({
   dataSelect,
 }: IPropsChatList) => {
   const [chats, setChats] = useState<IChatsDB[]>([]);
-  const { socket } = useContext(GlobalContext);
+  const [filterSelect, setFilterSelect] = useState<string | undefined>("Todos");
+
+  const { socket, idUser } = useContext(GlobalContext);
   const { get } = useHttp();
 
   useEffect(() => {
@@ -139,12 +142,92 @@ const ChatLIstComponent = ({
   return (
     <>
       <div className="row">
+        <div className="col-md-12 mb-5">
+          <Input.Search
+            placeholder="Buscar"
+            onSearch={async (value) => {
+              if (value === "") return setChatSelect(undefined);
+
+              const ClienteDBFind: { data: { chat: { id: number } }[] } =
+                await get(`clientes?populate=chat&_q=${value}`);
+
+              console.log(ClienteDBFind.data[0].chat.id);
+
+              if (ClienteDBFind.data.length === 0) {
+                return toast.error("No se encontraron resultados", {
+                  autoClose: 2000,
+                });
+              }
+
+              const chatDBFind: { data: IChatsDB } = await get(
+                `chats/${ClienteDBFind.data[0].chat.id}}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`
+              );
+
+              if (chatDBFind.data.vendedor.id !== idUser) {
+                return toast.error(
+                  "Este cliente no te pertenece no puedes visualizarlo",
+                  {
+                    autoClose: 2000,
+                  }
+                );
+              }
+
+              toast.success("Chat econtrado", {
+                autoClose: 2000,
+              });
+
+              setChatSelect(chatDBFind.data);
+            }}
+            allowClear
+            style={{
+              width: "100%",
+            }}
+          />
+        </div>
+        {chats.length > 0 && (
+          <div className="col-md-12 mb-5">
+            <Select
+              value={filterSelect}
+              onChange={(value) => {
+                setFilterSelect(value);
+              }}
+              style={{
+                width: "100%",
+              }}
+            >
+              <Select.Option value="Todos">Todos</Select.Option>
+              {_.uniq(
+                chats
+                  .filter((chat) => {
+                    return chat.etapa;
+                  })
+
+                  .map((chat) => {
+                    return chat.etapa.nombre;
+                  })
+              ).map((etapa) => {
+                return (
+                  <Select.Option value={etapa} key={etapa}>
+                    {etapa}
+                  </Select.Option>
+                );
+              })}
+            </Select>
+          </div>
+        )}
         {_.uniq(
-          chats.map((chat) => {
-            return chat.fechamarcar.split("T")[1].split(".")[0].split(":")[0];
-          })
+          chats
+            .filter((chat) => {
+              if (filterSelect === "Todos") return true;
+
+              return chat.etapa.nombre === filterSelect;
+            })
+            .map((chat) => {
+              return chat.fechamarcar.split("T")[1].split(".")[0].split(":")[0];
+            })
         )
           .sort((a, b) => (a > b ? 1 : -1))
+
           .map((hour) => {
             return (
               <div className="col-md-12 mb-5">
