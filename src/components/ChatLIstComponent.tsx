@@ -28,7 +28,7 @@ const ChatLIstComponent = ({
   const [chats, setChats] = useState<IChatsDB[]>([]);
   const [filterSelect, setFilterSelect] = useState<string | undefined>("Todos");
 
-  const { socket, idUser } = useContext(GlobalContext);
+  const { socket, idUser, roleUser } = useContext(GlobalContext);
   const { get } = useHttp();
 
   useEffect(() => {
@@ -163,7 +163,10 @@ const ChatLIstComponent = ({
                 `chats/${ClienteDBFind.data[0].chat.id}}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`
               );
 
-              if (chatDBFind.data.vendedor.id !== idUser) {
+              if (
+                chatDBFind.data.vendedor.id !== idUser &&
+                roleUser !== "ADMIN"
+              ) {
                 return toast.error(
                   "Este cliente no te pertenece no puedes visualizarlo",
                   {

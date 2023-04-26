@@ -601,6 +601,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                   fontSize: "1.5rem",
                   cursor: "pointer",
                   color: "white",
+                  zIndex: 9999,
                 }}
               />
             </div>

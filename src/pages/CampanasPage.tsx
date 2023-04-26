@@ -2,6 +2,7 @@ import { DeleteFilled, EditOutlined, FileAddOutlined } from "@ant-design/icons";
 import { Card, Form } from "antd";
 import Meta from "antd/lib/card/Meta";
 import React, { useContext, useEffect, useState } from "react";
+import { Calendar } from "react-calendar";
 import Swal from "sweetalert2";
 import ModalFormCampana from "../components/ModalFormCampana";
 import { colorsCosbiome } from "../constants/colorSchemas";
@@ -21,6 +22,7 @@ const CampanasPage = () => {
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [campanaEdit, setCampanaEdit] = useState<ICampanasDB | undefined>();
+  const [dateRange, setDateRange] = useState<Date[]>([]);
 
   const [form] = Form.useForm();
   const { post, get, update, deleted } = useHttp();
@@ -243,11 +245,30 @@ const CampanasPage = () => {
         <h1 className="text-center">CAMPAÑAS</h1>
 
         <div className="row">
+          <div className="col-12 col-md-12 col-lg-12 mt-3">
+            <Calendar
+              selectRange
+              onChange={async (e: Date[]) => {
+                setDateRange(e);
+              }}
+            />
+          </div>
+        </div>
+        <div className="row">
           {campanas.map((campana) => {
             const procentajeVenta =
-              (campana.chats.filter((a) => a.etapa.nombre === "VENTA CONCLUIDA")
-                .length /
-                campana.chats.length) *
+              (campana.chats
+                .filter(
+                  (chat) =>
+                    new Date(chat.createdAt) >= dateRange[0] &&
+                    new Date(chat.createdAt) <= dateRange[1]
+                )
+                .filter((a) => a.etapa.nombre === "VENTA CONCLUIDA").length /
+                campana.chats.filter(
+                  (chat) =>
+                    new Date(chat.createdAt) >= dateRange[0] &&
+                    new Date(chat.createdAt) <= dateRange[1]
+                ).length) *
               100;
 
             return (
@@ -270,7 +291,16 @@ const CampanasPage = () => {
                     title={campana.nombre}
                     description={
                       <>
-                        <p>Chats: {campana.chats.length}</p>
+                        <p>
+                          Chats:{" "}
+                          {
+                            campana.chats.filter(
+                              (chat) =>
+                                new Date(chat.createdAt) >= dateRange[0] &&
+                                new Date(chat.createdAt) <= dateRange[1]
+                            ).length
+                          }
+                        </p>
                         <p>Palabras Clave: {campana.claves}</p>
                         <div>
                           <small>ETAPAS </small>
@@ -281,7 +311,11 @@ const CampanasPage = () => {
                                 {etapa.nombre}:{" "}
                                 {
                                   campana.chats.filter(
-                                    (chat) => chat.etapa.id === etapa.id
+                                    (chat) =>
+                                      chat.etapa.id === etapa.id &&
+                                      new Date(chat.createdAt) >=
+                                        dateRange[0] &&
+                                      new Date(chat.createdAt) <= dateRange[1]
                                   ).length
                                 }
                               </p>
