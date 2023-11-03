@@ -71,7 +71,9 @@ const CalificacionesVendedor = () => {
         }}
         width="80%"
       >
-        {chatSelected && <ChatComponent chat={chatSelected} />}
+        {chatSelected && (
+          <ChatComponent setChatSelect={setChatSelected} chat={chatSelected} />
+        )}
       </Modal>
 
       <Modal

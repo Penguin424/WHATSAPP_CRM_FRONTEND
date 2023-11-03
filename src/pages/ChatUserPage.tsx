@@ -98,7 +98,9 @@ const ChatUserPage = () => {
           }}
           className="col-md-9"
         >
-          {chatSelect && <ChatComponent chat={chatSelect} />}
+          {chatSelect && (
+            <ChatComponent setChatSelect={setChatSelect} chat={chatSelect} />
+          )}
         </div>
       </div>
     </div>

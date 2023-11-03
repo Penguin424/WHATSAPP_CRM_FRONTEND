@@ -77,6 +77,15 @@ const DrawerComponent = ({ children }: IPropsDrawer) => {
             CONTACTO DEL DÍA
           </Menu.Item>
 
+          <Menu.Item
+            key="6"
+            onClick={() => {
+              navigate("/calendario");
+            }}
+          >
+            CALENDARIO
+          </Menu.Item>
+
           <SubMenu title="REPORTES" key="5">
             <Menu.Item
               key="5.1"

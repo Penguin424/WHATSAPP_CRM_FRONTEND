@@ -20,9 +20,10 @@ import VideoComponent from "./VideoComponent";
 
 interface IPropsChatComponent {
   chat: IChatsDB;
+  setChatSelect: React.Dispatch<React.SetStateAction<IChatsDB | undefined>>;
 }
 
-const ChatComponent = ({ chat }: IPropsChatComponent) => {
+const ChatComponent = ({ chat, setChatSelect }: IPropsChatComponent) => {
   const [messages, setMessages] = useState<IMessagesDB[]>([]);
   const [redaction, setRedaction] = useState<string>("");
   const [open, setOpen] = useState<boolean>(false);
@@ -64,6 +65,20 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
     handleGetMessages();
     handleGetCampanas();
 
+    socket.on("chat:update", (data) => {
+      let faltten: IChatsDB;
+
+      if (data.data) {
+        faltten = strapiFlatten(data.data);
+      } else {
+        faltten = strapiFlatten(data);
+      }
+
+      if (faltten.id === chat.id) {
+        setChatSelect(faltten);
+      }
+    });
+
     socket.on("mensaje:create", (data: IMessagesDB) => {
       const flatten: IMessagesDB = strapiFlatten(data);
 
@@ -81,6 +96,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
 
     return () => {
       socket.off("mensaje:create");
+      socket.off("chat:update");
     };
 
     // eslint-disable-next-line
@@ -343,6 +359,8 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
           layout="vertical"
           initialValues={{
             nombre: chat.cliente.nombre,
+            nota: chat.nota,
+            fechamarcar: moment(chat.fechamarcar).format("YYYY-MM-DDTHH:mm"),
           }}
         >
           <Form.Item
@@ -463,7 +481,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                       ? chat.campana.id
                       : value;
 
-                    await update(
+                    let chatUpdate = await update(
                       `chats/${chat.id}?populate[0]=vendedor&populate[1]=cliente&populate[2]=campana&populate[3]=etapa&populate[4]=campana.etapas`,
                       {
                         data: {
@@ -490,6 +508,8 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                       showConfirmButton: false,
                       timer: 1500,
                     });
+
+                    console.log(chatUpdate);
 
                     setUpdate({});
                   } catch (error) {
@@ -543,7 +563,7 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                       );
 
                       await update(
-                        `campanas/${chat.campana.id}?populate[0]=etapas&populate[1]=chats&populate[2]=chats.etapa`,
+                        `etapas/${chat.etapa.id}?populate[0]=etapas&populate[1]=chats&populate[2]=chats.etapa`,
                         {
                           data: {
                             updateAt: new Date().toISOString(),
@@ -595,6 +615,8 @@ const ChatComponent = ({ chat }: IPropsChatComponent) => {
                   setOpen(true);
                   form.setFieldsValue({
                     nombre: chat.cliente.nombre,
+                    telefono: chat.cliente.telefono,
+                    nota: chat.nota,
                   });
                 }}
                 style={{

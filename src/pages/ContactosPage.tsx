@@ -494,7 +494,10 @@ const ContactosPage = () => {
           }}
         >
           {selectChat && (
-            <ChatComponent chat={selectChat as unknown as IChatsDB} />
+            <ChatComponent
+              setChatSelect={setSelectChat}
+              chat={selectChat as unknown as IChatsDB}
+            />
           )}
         </div>
       </Modal>

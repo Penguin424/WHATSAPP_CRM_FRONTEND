@@ -8,6 +8,7 @@ import CampanasPage from "./pages/CampanasPage";
 import ContactoDiaClienetes from "./pages/ContactoDiaClienetes";
 import CalificacionesVendedor from "./pages/reports/CalificacionesVendedor";
 import { ToastContainer } from "react-toastify";
+import CalendarioVendedores from "./pages/CalendarioVendedores";
 
 const App = () => {
   return (
@@ -20,6 +21,7 @@ const App = () => {
             <Route path="/contactos" element={<ContactosPage />} />
             <Route path="/campañas" element={<CampanasPage />} />
             <Route path="/contactodia" element={<ContactoDiaClienetes />} />
+            <Route path="/calendario" element={<CalendarioVendedores />} />
 
             <Route path="/reportes">
               <Route
